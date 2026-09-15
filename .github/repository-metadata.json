@@ -1,0 +1,24 @@
+{
+  "description": "Interactive 3D Drosophila brain atlas and local connectomics research lab. Explore MaleCNS anatomy, train connectome-based neural networks, and evaluate neural architecture search with reproducible PyTorch experiments.",
+  "topics": [
+    "drosophila",
+    "malecns",
+    "connectomics",
+    "connectome",
+    "computational-neuroscience",
+    "neuroscience",
+    "neuroai",
+    "brain-inspired-ai",
+    "neural-architecture-search",
+    "brain-atlas",
+    "neural-networks",
+    "scientific-computing",
+    "reproducible-research",
+    "data-visualization",
+    "threejs",
+    "pytorch",
+    "webgpu",
+    "python",
+    "typescript"
+  ]
+}

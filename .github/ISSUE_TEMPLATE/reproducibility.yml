@@ -1,0 +1,25 @@
+name: Experiment or reproducibility report
+description: Report a numerical mismatch, replay failure, or scientific interpretation issue.
+title: '[Research] '
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Observed result or question
+      description: State the measured behavior and the claim or expected result being checked.
+    validations:
+      required: true
+  - type: textarea
+    id: identity
+    attributes:
+      label: Source and experiment identity
+      description: Commit, engine/mode, graph hash, configuration, seeds, and checkpoint or artifact hashes when available. Do not include credentials.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction and evidence
+      description: Commands, hardware, package versions, expected versus actual metrics, and whether this is training, validation, held-out evaluation, or replay.
+    validations:
+      required: true

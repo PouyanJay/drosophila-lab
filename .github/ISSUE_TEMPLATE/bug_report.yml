@@ -1,0 +1,33 @@
+name: Bug report
+description: Report a workspace, setup, atlas, or trainer problem.
+title: '[Bug] '
+body:
+  - type: markdown
+    attributes:
+      value: 'Include enough detail to reproduce the issue. Remove API keys, tokens, encryption keys, and private data from logs and screenshots.'
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the actual behavior and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include the command or UI action and relevant non-secret configuration.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, browser, repository commit/tag, compute mode, and Docker version if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs or screenshots
+      description: Paste the relevant error or attach a screenshot after removing secrets.
