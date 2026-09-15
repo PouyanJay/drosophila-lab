@@ -1,0 +1,25 @@
+.da-model-popover.dc-composer-menu {
+ width:min(340px,var(--radix-popover-trigger-width),calc(100vw - 24px))!important;
+ max-height:min(430px,var(--radix-popover-content-available-height),calc(100dvh - 24px));
+ padding:8px!important;border-radius:16px!important;overflow-y:auto;overscroll-behavior:contain;
+ box-shadow:0 12px 36px #0008!important;
+}
+.dc-composer-menu .da-model-menu-top{padding:4px 8px 8px;min-height:36px;font-size:14px}
+.dc-composer-menu .da-model-search{margin:0 4px 8px;padding:8px 10px;border-radius:10px;min-height:38px}
+.dc-composer-menu .da-model-search input{font-size:14px;background:transparent!important;min-width:0}
+.dc-composer-menu .da-model-options{max-height:none;overflow:visible}
+.dc-composer-menu .da-provider-heading{padding:8px 4px;gap:8px;font-size:14px}
+.dc-composer-menu .da-provider-heading small{font-size:12px;margin-left:auto}
+.dc-composer-menu .da-connect-provider{min-height:38px;margin:4px 0 8px;padding:8px 10px;border-radius:9px;font-size:14px}
+.dc-composer-menu .da-model-option{min-height:40px;padding:8px 10px;border-radius:9px}
+.dc-composer-menu .da-model-menu-foot{padding:8px 0 0}
+.dc-composer-menu .da-model-menu-foot p{display:none}
+.dc-composer-menu .da-offline-option{min-height:42px;padding:8px;gap:10px}
+.dc-composer-menu .dc-muted{padding:4px 8px;margin:4px 0 8px;font-size:13px;line-height:1.5}
+.dc-composer-menu .dc-instant{padding:12px;margin:4px 0 8px;border-radius:11px}
+.dc-composer-menu .dc-instant strong{font-size:14px}
+.dc-composer-menu .dc-instant small{margin-top:3px}
+.dc-composer-menu .dc-training-approach{margin:8px 0 0;padding:4px 8px 0}
+.dc-composer-menu .dc-training-approach summary{font-size:13px;min-height:36px}
+.dc-composer-menu .dc-machine>button:first-child{padding:8px;min-height:44px}
+@media(max-width:600px){.da-model-popover.dc-composer-menu{width:min(var(--radix-popover-trigger-width),calc(100vw - 24px))!important;max-height:min(400px,var(--radix-popover-content-available-height),calc(100dvh - 24px))}}

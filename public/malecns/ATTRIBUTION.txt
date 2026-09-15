@@ -1,0 +1,10 @@
+MaleCNS v1.0
+Source: https://male-cns.janelia.org/download/
+License: Creative Commons Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)
+Attribution: FlyEM (HHMI Janelia), University of Cambridge, MRC Laboratory of Molecular Biology, Google Research.
+
+Derived data in this directory retain original MaleCNS body IDs and measured edge counts. Graph extracts are bounded neighborhoods selected as documented in their selection metadata. Source checksums are in manifest.json.
+
+Anatomical meshes originate from the public fullbrain-roi-v5 and vnc-neuropil-shell-v2 segmentations. Display meshes are simplified via quadric edge collapse, with per-fragment original and display checksums in meshes.json. SWC centerline skeletons are converted to line-segment buffers. Soma/root annotations and skeletons are converted from 8 nm voxel units to micrometres. Mesh positions convert from nanometres to micrometres. All share the viewing transform (x, -z, y).
+
+Rendering sample and connectivity extracts are not the entire nervous system. Computational neuron dynamics and stimulus/response interfaces are modeling assumptions, not measurements supplied by the connectome.

@@ -1,0 +1,21 @@
+name: drosophila-local
+services:
+  trainer:
+    build:
+      context: .
+      dockerfile: research/lab/Dockerfile.local
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      DATABASE_URL: ${TRAINER_DATABASE_URL:?Start with the local launcher}
+      LAB_SERVICE_TOKEN: ${LAB_SERVICE_TOKEN:?Start with the local launcher}
+    volumes:
+      - ./.local-data/runs:/data/runs
+    networks:
+      - supabase
+    restart: unless-stopped
+    stop_grace_period: 120s
+networks:
+  supabase:
+    external: true
+    name: supabase_network_drosophila-local

@@ -1,0 +1,58 @@
+{
+  "sourceNeurons": 165122,
+  "sourceEdges": 6235682,
+  "maxInitialLogitDifference": 1.4156103134155273e-07,
+  "outcome": "no_improvement",
+  "evaluatedCandidates": 2,
+  "improved": false,
+  "replay": {
+    "verifiedArtifacts": true,
+    "replayed": false,
+    "reason": "No completed sealed-test evaluation; this variant is experimental"
+  },
+  "codeSha256": "aed5db93d5f32e016c311d894022ffd67e78e15e18f4e1768edd065c6e14dc4c",
+  "config": {
+    "candidates": 2,
+    "confirmationUpdates": 2,
+    "delays": [
+      1
+    ],
+    "examples": 8,
+    "fullUpdates": 2,
+    "lengths": [
+      2
+    ],
+    "maxCopies": 2,
+    "maxSeconds": 180,
+    "maxSlowdown": 3.0,
+    "minimumGain": 0.05,
+    "noise": [
+      0.2
+    ],
+    "patience": 4,
+    "pilotUpdates": 1,
+    "population": "cb_intrinsic",
+    "schema": "malecns-discovery/1",
+    "seed": 91703,
+    "seeds": [
+      41,
+      42,
+      43
+    ],
+    "task": "cue-memory",
+    "taskParameters": "{}"
+  },
+  "baselineValidation": 0.25,
+  "candidateValidation": [
+    {
+      "id": "candidate-0",
+      "accuracy": 0.25,
+      "gain": 0.0
+    },
+    {
+      "id": "candidate-1",
+      "accuracy": 0.25,
+      "gain": 0.0
+    }
+  ]
+}

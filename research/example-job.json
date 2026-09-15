@@ -1,0 +1,1 @@
+{"schema":"malecns-job/1","name":"Whole-CNS recurrent expansion","task":"cue-recall","steps":24,"batch":8,"sequenceLength":8,"trainExamples":256,"validationExamples":32,"testExamples":128,"learningRate":0.015,"seeds":[11,22,33],"variants":[{"name":"Recurrent graft · 16 units","graft":16,"prune":0},{"name":"Prune 30% + recurrent graft","graft":16,"prune":0.3}]}

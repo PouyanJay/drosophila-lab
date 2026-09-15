@@ -1,0 +1,11 @@
+FROM python:3.12-slim
+WORKDIR /app
+COPY research/lab/requirements.lock /app/requirements.lock
+RUN sed -i 's/torch==2.5.1+cpu/torch==2.5.1/' /app/requirements.lock
+RUN pip install --no-cache-dir -r /app/requirements.lock --extra-index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir "psycopg[binary]==3.2.9"
+COPY research/lab /app/research/lab
+COPY public/research/persistent-trainer.zip /tmp/trainer.zip
+RUN python -c "import zipfile; z=zipfile.ZipFile('/tmp/trainer.zip'); [z.extract(n,'/app') for n in z.namelist() if n.startswith('graph/')]" && rm /tmp/trainer.zip
+ENV LAB_GRAPH_DIR=/app/graph LAB_DATA_DIR=/data/runs LAB_THREADS=2 PYTHONUNBUFFERED=1
+CMD ["uvicorn","research.lab.service:create_app","--factory","--host","0.0.0.0","--port","8000","--workers","1","--no-access-log"]

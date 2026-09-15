@@ -1,0 +1,3 @@
+OpenAI and Claude brand icons from @lobehub/icons-static-svg (LobeHub Icons), MIT. Brand marks remain the property of their respective owners.
+Source: https://github.com/lobehub/lobe-icons
+Assets: https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/openai.svg and claude-color.svg

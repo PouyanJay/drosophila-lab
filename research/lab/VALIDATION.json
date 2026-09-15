@@ -1,0 +1,40 @@
+{
+  "accuracy": [
+    0.5833333333333334,
+    0.5833333333333334
+  ],
+  "artifactHashesVerified": true,
+  "delta": 0.0,
+  "forcedRestartRecovered": true,
+  "fullGraph": {
+    "edges": 6235682,
+    "neurons": 165122,
+    "sha256": "729b2b60c7759ead12163cc30daa2b8a3abf8565f0f5773f19fde20cfaa14f7b"
+  },
+  "jobId": "a48766c5-0d63-488f-bb52-ad7dbb63b6e3",
+  "ownerIsolation": true,
+  "passed": true,
+  "pausedAndResumed": true,
+  "repeatMatches": true,
+  "replay": {
+    "identityHash": "5e480b4aa6bc1a654e666ec75c022aa809f86864ffc0b63561c2ee1691bc43f7",
+    "models": 2,
+    "seeds": 3,
+    "verified": true
+  },
+  "seconds": 295.5410917629997,
+  "uiChecks": [
+    "Desktop result rendering",
+    "375px iframe viewport: no horizontal overflow",
+    "Four-tab mobile navigation fits one row",
+    "Seed switching updates measured table",
+    "Offline conversational setup reaches exact reviewable specification",
+    "No connected trainer: submission disabled"
+  ],
+  "limitations": [
+    "No persistent production machine connected",
+    "OpenAI/Claude adapters validated with mocked provider responses; no live provider key available",
+    "Cloud browser has no WebGL context; 3D atlas uses existing 2D fallback",
+    "Docker image packaging inspected; actual Docker daemon unavailable for container launch"
+  ]
+}

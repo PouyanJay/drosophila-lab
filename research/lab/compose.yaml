@@ -1,0 +1,19 @@
+services:
+  trainer:
+    build:
+      context: .
+      dockerfile: research/lab/Dockerfile
+    platform: linux/amd64
+    restart: unless-stopped
+    environment:
+      LAB_SERVICE_TOKEN: ${LAB_SERVICE_TOKEN:?Set a strong trainer secret in .env}
+      LAB_THREADS: 2
+      LAB_MAX_SECONDS: 21600
+    volumes:
+      - lab-runs:/data
+    ports:
+      - "127.0.0.1:8000:8000"
+    mem_limit: 8g
+    stop_grace_period: 120s
+volumes:
+  lab-runs:
