@@ -1,8 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { Check, ChevronDown, Cpu, LoaderCircle, Server } from 'lucide-react';
-import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useComposerAnchor } from '@/features/connections/composer-anchor';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import './composer-menu.css';
 import { prepareBrowserCompute } from '@/lib/client/browser-compute';
 import './compute.css';
 export default function ComputePicker({
@@ -23,7 +23,6 @@ export default function ComputePicker({
   onOpenChange: (v: boolean) => void;
   disabled: boolean;
 }) {
-  const { trigger, anchor } = useComposerAnchor();
   const [busy, setBusy] = useState(false),
     [status, setStatus] = useState(''),
     [error, setError] = useState(''),
@@ -52,10 +51,8 @@ export default function ComputePicker({
   const connected = (checked || health)?.connected;
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverAnchor virtualRef={anchor} />
       <PopoverTrigger asChild>
         <button
-          ref={trigger}
           type="button"
           className="da-compute-trigger"
           disabled={disabled || busy}

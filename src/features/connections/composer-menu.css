@@ -1,5 +1,5 @@
 .da-model-popover.dc-composer-menu {
-  width: min(340px, var(--radix-popover-trigger-width), calc(100vw - 24px)) !important;
+  width: min(340px, calc(100vw - 28px)) !important;
   max-height: min(430px, var(--radix-popover-content-available-height), calc(100dvh - 24px));
   padding: 8px !important;
   border-radius: 16px !important;
@@ -90,7 +90,6 @@
 }
 @media (max-width: 600px) {
   .da-model-popover.dc-composer-menu {
-    width: min(var(--radix-popover-trigger-width), calc(100vw - 24px)) !important;
     max-height: min(400px, var(--radix-popover-content-available-height), calc(100dvh - 24px));
   }
 }

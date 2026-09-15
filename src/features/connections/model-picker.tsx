@@ -1,5 +1,5 @@
 'use client';
-import { useComposerAnchor } from '@/features/connections/composer-anchor';
+import './composer-menu.css';
 import BrandLogo from '@/components/brand-logo';
 import { useEffect, useState } from 'react';
 import {
@@ -12,7 +12,7 @@ import {
   Search,
   Settings2,
 } from 'lucide-react';
-import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import type { Provider, ProviderStatus } from '@/lib/contracts/providers';
 export type ModelSelection = { provider: Provider | 'guided'; model: string; name: string };
@@ -51,7 +51,6 @@ export default function ModelPicker({
   onStatus: (p: ProviderStatus[]) => void;
   disabled: boolean;
 }) {
-  const { trigger, anchor } = useComposerAnchor();
   const [open, setOpen] = useState(false),
     [providers, setProviders] = useState(empty),
     [query, setQuery] = useState(''),
@@ -198,10 +197,8 @@ export default function ModelPicker({
           if (!v) setQuery('');
         }}
       >
-        <PopoverAnchor virtualRef={anchor} />
         <PopoverTrigger asChild>
           <button
-            ref={trigger}
             type="button"
             className="da-model-trigger"
             disabled={disabled}
