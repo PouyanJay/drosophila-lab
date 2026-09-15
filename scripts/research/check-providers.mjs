@@ -1,21 +1,125 @@
 import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import {pathToFileURL} from 'node:url';
-import ts from 'typescript';
-const root=process.cwd(),out=path.join(root,'.sites-runtime/provider-checks');await fs.mkdir(out,{recursive:true});
-for(const file of ['guide-contract','model-providers','guide-adapter','credential-crypto','experiment-suggestions','lab-conversation','lab-contract','lab-planner']){const source=await fs.readFile(path.join(root,'lib',file+'.ts'),'utf8');const js=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText.replace(/from '(\.\/[^']+)'/g,"from '$1.mjs'");await fs.writeFile(path.join(out,file+'.mjs'),js);}
-const {sealCredential,unsealCredential}=await import(pathToFileURL(path.join(out,'credential-crypto.mjs')));
-const {guideRequest,parseGuideReply,callGuide}=await import(pathToFileURL(path.join(out,'guide-adapter.mjs')));
-const {listProviderModels}=await import(pathToFileURL(path.join(out,'model-providers.mjs')));
-const secret=Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64'),key='test-only-credential-never-a-real-key';
-const sealed=await sealCredential(key,secret,'user-a:openai');assert(!sealed.includes(key));assert.equal(await unsealCredential(sealed,secret,'user-a:openai'),key);await assert.rejects(unsealCredential(sealed,secret,'user-b:openai'));await assert.rejects(unsealCredential(sealed,secret,'user-a:anthropic'));
-const plan={task:'beacon',goal:'accuracy',duplicates:128,prune:0,memory:true,population:'descending_neuron',budget:'quick',seeds:1,epochs:30,seed:11};const answer={text:'The plan is ready to review.',stage:4,plan},data={text:'Review the plan',stage:3,plan,messages:[{role:'assistant',text:'Welcome'},{role:'user',text:'I want better memory'},{role:'assistant',text:'Let us test recall'}],evidence:null};
-const originalFetch=globalThis.fetch;let calls=[];
-try{globalThis.fetch=async(url,init)=>{calls.push({url,init});const body=init?.body?JSON.parse(init.body):null;if(String(url).includes('/models'))return Response.json({data:[{id:'gpt-5.4-mini'},{id:'gpt-image-1'},{id:'claude-opus-5',display_name:'Claude Opus 5',capabilities:{structured_outputs:{supported:true}}}]});return Response.json(String(url).includes('anthropic')?{model:body.model,stop_reason:'end_turn',content:[{type:'text',text:JSON.stringify(answer)}]}:{model:body.model,status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify(answer)}]}]});};
-for(const [provider,model] of [['openai','gpt-5.4-mini'],['anthropic','claude-opus-5']]){const request=guideRequest(provider,model,key,data);assert.equal(request.body.model,model);const result=await callGuide(provider,model,key,data);assert.equal(result.provider,provider);assert.equal(result.model,model);assert.deepEqual(result.plan,plan);if(provider==='openai'){assert.equal(request.url,'https://api.openai.com/v1/responses');assert.equal(request.headers.Authorization,'Bearer '+key);assert.equal(request.headers['x-api-key'],undefined);assert.equal(request.body.input[0].content,'I want better memory');}else{assert.equal(request.url,'https://api.anthropic.com/v1/messages');assert.equal(request.headers['x-api-key'],key);assert.equal(request.headers.Authorization,undefined);assert.equal(request.body.messages[0].role,'user');assert(!JSON.stringify(request.body.output_config).includes('minimum'));}}
-assert.deepEqual((await listProviderModels('openai',key)).map(m=>m.id),['gpt-5.4-mini']);assert.deepEqual((await listProviderModels('anthropic',key)).map(m=>m.id),['claude-opus-5']);
-assert.throws(()=>parseGuideReply('anthropic',{stop_reason:'max_tokens',content:[]}));assert.throws(()=>parseGuideReply('openai',{status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify({...answer,plan:{...plan,duplicates:90000}})}]}]}));
-globalThis.fetch=async()=>new Response('',{status:401});await assert.rejects(callGuide('anthropic','claude-opus-5',key,data),/rejected the API key/);
-}finally{globalThis.fetch=originalFetch;}
-console.log('Passed: per-user credential encryption, provider isolation, model filtering, both request/response adapters, context preservation and invalid-key/schema handling. API responses were mocked; no live provider credential was available.');
+import { createModuleLoader } from '../../tests/helpers/load-typescript.mjs';
+const load = createModuleLoader();
+const { sealCredential, unsealCredential } = await load('@/server/credential-crypto');
+const { guideRequest, parseGuideReply, callGuide } = await load('@/server/guide-adapter');
+const { listProviderModels } = await load('@/server/model-providers');
+
+const secret = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64'),
+  key = 'test-only-credential-never-a-real-key';
+const sealed = await sealCredential(key, secret, 'user-a:openai');
+assert(!sealed.includes(key));
+assert.equal(await unsealCredential(sealed, secret, 'user-a:openai'), key);
+await assert.rejects(unsealCredential(sealed, secret, 'user-b:openai'));
+await assert.rejects(unsealCredential(sealed, secret, 'user-a:anthropic'));
+const plan = {
+  task: 'beacon',
+  goal: 'accuracy',
+  duplicates: 128,
+  prune: 0,
+  memory: true,
+  population: 'descending_neuron',
+  budget: 'quick',
+  seeds: 1,
+  epochs: 30,
+  seed: 11,
+};
+const answer = { text: 'The plan is ready to review.', stage: 4, plan },
+  data = {
+    text: 'Review the plan',
+    stage: 3,
+    plan,
+    messages: [
+      { role: 'assistant', text: 'Welcome' },
+      { role: 'user', text: 'I want better memory' },
+      { role: 'assistant', text: 'Let us test recall' },
+    ],
+    evidence: null,
+  };
+const originalFetch = globalThis.fetch;
+let calls = [];
+try {
+  globalThis.fetch = async (url, init) => {
+    calls.push({ url, init });
+    const body = init?.body ? JSON.parse(init.body) : null;
+    if (String(url).includes('/models'))
+      return Response.json({
+        data: [
+          { id: 'gpt-5.4-mini' },
+          { id: 'gpt-image-1' },
+          {
+            id: 'claude-opus-5',
+            display_name: 'Claude Opus 5',
+            capabilities: { structured_outputs: { supported: true } },
+          },
+        ],
+      });
+    return Response.json(
+      String(url).includes('anthropic')
+        ? {
+            model: body.model,
+            stop_reason: 'end_turn',
+            content: [{ type: 'text', text: JSON.stringify(answer) }],
+          }
+        : {
+            model: body.model,
+            status: 'completed',
+            output: [{ content: [{ type: 'output_text', text: JSON.stringify(answer) }] }],
+          },
+    );
+  };
+  for (const [provider, model] of [
+    ['openai', 'gpt-5.4-mini'],
+    ['anthropic', 'claude-opus-5'],
+  ]) {
+    const request = guideRequest(provider, model, key, data);
+    assert.equal(request.body.model, model);
+    const result = await callGuide(provider, model, key, data);
+    assert.equal(result.provider, provider);
+    assert.equal(result.model, model);
+    assert.deepEqual(result.plan, plan);
+    if (provider === 'openai') {
+      assert.equal(request.url, 'https://api.openai.com/v1/responses');
+      assert.equal(request.headers.Authorization, 'Bearer ' + key);
+      assert.equal(request.headers['x-api-key'], undefined);
+      assert.equal(request.body.input[0].content, 'I want better memory');
+    } else {
+      assert.equal(request.url, 'https://api.anthropic.com/v1/messages');
+      assert.equal(request.headers['x-api-key'], key);
+      assert.equal(request.headers.Authorization, undefined);
+      assert.equal(request.body.messages[0].role, 'user');
+      assert(!JSON.stringify(request.body.output_config).includes('minimum'));
+    }
+  }
+  assert.deepEqual(
+    (await listProviderModels('openai', key)).map((m) => m.id),
+    ['gpt-5.4-mini'],
+  );
+  assert.deepEqual(
+    (await listProviderModels('anthropic', key)).map((m) => m.id),
+    ['claude-opus-5'],
+  );
+  assert.throws(() => parseGuideReply('anthropic', { stop_reason: 'max_tokens', content: [] }));
+  assert.throws(() =>
+    parseGuideReply('openai', {
+      status: 'completed',
+      output: [
+        {
+          content: [
+            {
+              type: 'output_text',
+              text: JSON.stringify({ ...answer, plan: { ...plan, duplicates: 90000 } }),
+            },
+          ],
+        },
+      ],
+    }),
+  );
+  globalThis.fetch = async () => new Response('', { status: 401 });
+  await assert.rejects(callGuide('anthropic', 'claude-opus-5', key, data), /rejected the API key/);
+} finally {
+  globalThis.fetch = originalFetch;
+}
+console.log(
+  'Passed: per-user credential encryption, provider isolation, model filtering, both request/response adapters, context preservation and invalid-key/schema handling. API responses were mocked; no live provider credential was available.',
+);

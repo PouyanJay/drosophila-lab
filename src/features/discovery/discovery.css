@@ -1,0 +1,227 @@
+.discovery-panel {
+  margin: 16px 0;
+  padding: 18px;
+  border: 1px solid #263344;
+  border-radius: 18px;
+  background: #0c1118;
+  color: #c7d4e5;
+  min-width: 0;
+}
+.discovery-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.discovery-heading > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.discovery-panel p,
+.discovery-evidence p {
+  font-size: 13px;
+  line-height: 1.65;
+  color: #91a0b4;
+}
+.discovery-panel label {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+  font-size: 12px;
+}
+.discovery-panel select,
+.discovery-panel textarea {
+  width: 100%;
+  min-width: 0;
+  background: #101924;
+  border: 1px solid #30435a;
+  color: #d9e5f5;
+  border-radius: 10px;
+  padding: 10px;
+}
+.discovery-panel textarea {
+  height: 280px;
+  font: 12px/1.6 monospace;
+}
+.discovery-panel details {
+  margin: 14px 0;
+}
+.discovery-panel summary {
+  cursor: pointer;
+  font-size: 12px;
+}
+.discovery-panel button,
+.discovery-evidence button {
+  cursor: pointer;
+}
+.discovery-facts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.discovery-facts span {
+  font-size: 11px;
+  border-radius: 6px;
+  background: #172437;
+  padding: 5px 8px;
+}
+.discovery-live {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #263344;
+  font-size: 13px;
+}
+.discovery-live progress {
+  width: 100%;
+  accent-color: #7daef2;
+}
+.discovery-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.discovery-actions button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+.discovery-evidence {
+  padding: 24px;
+  max-width: 1000px;
+  margin: auto;
+  min-width: 0;
+}
+.discovery-evidence h2 {
+  font-size: 23px;
+  margin: 8px 0;
+}
+.discovery-evidence h3 {
+  font-size: 15px;
+  margin: 22px 0 10px;
+}
+.discovery-heading small {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: #8199b7;
+}
+.discovery-candidates {
+  display: grid;
+  gap: 8px;
+}
+.discovery-candidates button {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 2fr 60px 85px;
+  gap: 12px;
+  align-items: center;
+  text-align: left;
+  padding: 10px;
+  background: #101924;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.discovery-candidates span {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.discovery-candidates small {
+  color: #8998ac;
+  font-size: 10px;
+}
+.discovery-bar {
+  background: #1b2634;
+  border-radius: 3px;
+  height: 6px;
+}
+.discovery-bar i {
+  display: block;
+  background: #80b5f5;
+  height: 6px;
+  border-radius: 3px;
+}
+.discovery-topology {
+  margin: 20px 0;
+}
+.discovery-topology button {
+  color: #9bc4ff;
+}
+.discovery-topology small {
+  display: block;
+  color: #8190a5;
+  font-size: 11px;
+  margin-top: 8px;
+}
+.discovery-scores {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+.discovery-scores span {
+  font-size: 12px;
+  color: #94a4b8;
+}
+.discovery-scores b {
+  display: block;
+  color: #d9e9ff;
+  font-size: 22px;
+}
+.discovery-table {
+  overflow: auto;
+  margin: 16px 0;
+}
+.discovery-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.discovery-table th,
+.discovery-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #263344;
+}
+.discovery-mode-button {
+  padding: 7px;
+  border-radius: 8px;
+  color: #869bb4;
+}
+.discovery-mode-button[aria-pressed='true'] {
+  background: #19314e;
+  color: #a4ceff;
+}
+@media (max-width: 600px) {
+  .discovery-evidence {
+    padding: 16px;
+  }
+  .discovery-candidates button {
+    grid-template-columns: 1fr 60px;
+  }
+  .discovery-bar {
+    grid-column: 1;
+  }
+  .discovery-scores {
+    gap: 16px;
+  }
+}
+
+.discovery-clarification {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #a7b9d2;
+  padding: 0 12px;
+}
+.discovery-panel select {
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+.discovery-panel .da-primary {
+  margin-top: 8px;
+}
+.discovery-evidence .da-primary {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  white-space: normal;
+}

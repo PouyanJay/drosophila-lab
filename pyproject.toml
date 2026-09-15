@@ -1,0 +1,13 @@
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+# Numerical worker files are source-hashed for checkpoint provenance.
+# Format utilities explicitly; do not rewrite archived scientific source.
+extend-exclude = [
+  "research/lab",
+  "research/versions",
+  "research/runner.py",
+  "research/prepare.py",
+  "research/evaluate.py",
+  "research/test_runner.py",
+]

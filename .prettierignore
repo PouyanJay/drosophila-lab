@@ -1,0 +1,17 @@
+node_modules/
+.next/
+.sites-runtime/
+.validation/
+.local-data/
+backups/
+pnpm-lock.yaml
+/public/
+vendor/
+src/components/ui/
+/research/
+verification/
+docs/validation/
+.venv/
+next-env.d.ts
+.eslint-suppressions.json
+src/hooks/use-mobile.ts

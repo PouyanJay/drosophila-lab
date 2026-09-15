@@ -1,0 +1,5 @@
+-r research/requirements.txt
+-r research/lab/requirements.txt
+torch==2.5.1
+psycopg[binary]==3.2.9
+ruff==0.12.12

@@ -1,0 +1,148 @@
+import { sealCredential, unsealCredential } from '@/server/credential-crypto';
+import { database } from '@/server/database';
+import 'server-only';
+import { z } from 'zod';
+const env = process.env;
+export const computeInput = z
+  .object({
+    id: z.string().uuid().optional(),
+    name: z.string().trim().min(1).max(60),
+    url: z.string().max(2048),
+    token: z.string().min(32).max(2048),
+  })
+  .strict();
+export const graphSha = '729b2b60c7759ead12163cc30daa2b8a3abf8565f0f5773f19fde20cfaa14f7b';
+export const ownerHash = async (user: string) =>
+  Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(user))))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+const encryption = () =>
+  (env as unknown as { PROVIDER_ENCRYPTION_KEY?: string }).PROVIDER_ENCRYPTION_KEY || '';
+export function publicTrainerURL(value: string) {
+  const u = new URL(value.trim());
+  if (
+    u.protocol !== 'https:' ||
+    u.username ||
+    u.password ||
+    (u.port && u.port !== '443') ||
+    u.pathname !== '/' ||
+    u.search ||
+    u.hash ||
+    u.hostname.length > 253 ||
+    !u.hostname.includes('.') ||
+    !/^[a-z0-9.-]+$/.test(u.hostname) ||
+    u.hostname.split('.').some((p) => !p || p.startsWith('-') || p.endsWith('-')) ||
+    /^\d+(\.\d+)*$/.test(u.hostname) ||
+    /(^|\.)(localhost|local|internal|lan|home|test|invalid|example)$/.test(u.hostname)
+  )
+    throw Error('Use a public HTTPS trainer address with no path, credentials or query.');
+  return u.origin;
+}
+export function publicAddress(ip: string) {
+  if (ip.includes(':'))
+    return /^[23][a-f0-9]{3}:/i.test(ip) && !ip.toLowerCase().startsWith('2001:db8:');
+  const p = ip.split('.').map(Number);
+  if (p.length !== 4 || p.some((x) => !Number.isInteger(x) || x < 0 || x > 255)) return false;
+  const [a, b] = p;
+  return !(
+    a === 0 ||
+    a === 10 ||
+    a === 127 ||
+    a >= 224 ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && (b === 168 || b === 0)) ||
+    (a === 100 && b >= 64 && b <= 127) ||
+    (a === 198 && (b === 18 || b === 19 || b === 51)) ||
+    (a === 203 && b === 0)
+  );
+}
+export async function verifyPublicDNS(url: string) {
+  const host = new URL(publicTrainerURL(url)).hostname;
+  const responses = await Promise.all(
+    ['A', 'AAAA'].map(async (type) => {
+      const r = await fetch(
+        'https://cloudflare-dns.com/dns-query?name=' + encodeURIComponent(host) + '&type=' + type,
+        {
+          headers: { Accept: 'application/dns-json' },
+          redirect: 'error',
+          signal: AbortSignal.timeout(8000),
+        },
+      );
+      if (!r.ok) throw Error('DNS verification failed');
+      return r.json() as Promise<any>;
+    }),
+  );
+  const ips = responses.flatMap((r) =>
+    (r.Answer || []).filter((a: any) => [1, 28].includes(a.type)).map((a: any) => a.data),
+  );
+  if (!ips.length || ips.some((ip) => !publicAddress(ip)))
+    throw Error('The trainer must resolve to a public Internet address.');
+}
+export async function verifyTrainer(url: string, token: string, user: string) {
+  await verifyPublicDNS(url);
+  const r = await fetch(new URL('/health', url), {
+    headers: { Authorization: 'Bearer ' + token, 'X-Lab-Owner': await ownerHash(user) },
+    redirect: 'error',
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!r.ok)
+    throw Error(
+      r.status === 401
+        ? 'The trainer rejected that secret. Check the connection file or token.'
+        : 'The trainer did not pass its connection check.',
+    );
+  const d: any = await r.json();
+  if (
+    d.engine !== 'malecns-synaptic-lab/1.0' ||
+    d.graphSha256 !== graphSha ||
+    d.neurons !== 165122 ||
+    d.edges !== 6235682 ||
+    d.persistent !== true
+  )
+    throw Error('This machine must run the supplied full MaleCNS trainer and verified graph.');
+  return { status: d.status, device: d.device, neurons: d.neurons, edges: d.edges };
+}
+export async function listCompute(user: string) {
+  const d = await database().query(
+    'SELECT id,name,url,updated_at FROM compute_connections WHERE user_id = $1 ORDER BY updated_at DESC',
+    [user],
+  );
+  return d.rows;
+}
+export async function getCompute(user: string, id: string) {
+  const row: any =
+    (
+      await database().query('SELECT * FROM compute_connections WHERE id = $1 AND user_id = $2', [
+        id,
+        user,
+      ])
+    ).rows[0] ?? null;
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    url: row.url,
+    token: await unsealCredential(
+      row.sealed_token,
+      encryption(),
+      JSON.stringify([user, row.id, 'compute']),
+    ),
+  };
+}
+export async function saveCompute(user: string, input: z.infer<typeof computeInput>) {
+  const id = input.id || crypto.randomUUID();
+  if (input.id && !(await getCompute(user, id))) throw Error('Compute connection not found.');
+  const url = publicTrainerURL(input.url);
+  const health = await verifyTrainer(url, input.token, user);
+  const sealed = await sealCredential(
+    input.token,
+    encryption(),
+    JSON.stringify([user, id, 'compute']),
+  );
+  await database().query(
+    'INSERT INTO compute_connections (id,user_id,name,url,sealed_token,updated_at) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT(id) DO UPDATE SET name=excluded.name,url=excluded.url,sealed_token=excluded.sealed_token,updated_at=excluded.updated_at WHERE compute_connections.user_id=excluded.user_id',
+    [id, user, input.name, url, sealed, new Date().toISOString()],
+  );
+  return { id, name: input.name, url, health };
+}

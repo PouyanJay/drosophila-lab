@@ -1,4 +1,0 @@
-import {sqliteTable,text,index} from 'drizzle-orm/sqlite-core';
-export const records=sqliteTable('lab_records',{id:text('id').primaryKey(),kind:text('kind').notNull(),name:text('name').notNull(),createdAt:text('created_at').notNull(),payload:text('payload').notNull()},t=>[index('idx_lab_records_kind_created').on(t.kind,t.createdAt)]);
-export const providerConnections=sqliteTable('provider_connections',{id:text('id').primaryKey(),userId:text('user_id').notNull(),provider:text('provider').notNull(),sealedKey:text('sealed_key').notNull(),keyHint:text('key_hint').notNull(),updatedAt:text('updated_at').notNull()});
-export const computeConnections=sqliteTable('compute_connections',{id:text('id').primaryKey(),userId:text('user_id').notNull(),name:text('name').notNull(),url:text('url').notNull(),sealedToken:text('sealed_token').notNull(),updatedAt:text('updated_at').notNull()},t=>[index('idx_compute_connections_user').on(t.userId)]);

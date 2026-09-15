@@ -1,0 +1,292 @@
+.da-composer-pickers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+.da-composer-pickers .da-model-trigger {
+  max-width: 55%;
+  min-width: 0;
+}
+.da-compute-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 45%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border-radius: 20px;
+  color: #becbd4;
+  font-size: 14px;
+  background: transparent;
+  border: 0;
+}
+.da-compute-trigger:hover {
+  background: #26323e;
+}
+.da-compute-trigger span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.da-compute-trigger svg {
+  flex: none;
+}
+.dc-muted {
+  padding: 8px 12px;
+  color: #9db0be;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.dc-machine {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 12px;
+}
+.dc-machine:hover {
+  background: #293844;
+}
+.dc-machine > button:first-child {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  padding: 12px 8px;
+  min-height: 60px;
+}
+.dc-machine span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.dc-machine small {
+  display: block;
+  font-size: 12px;
+  color: #92a6b5;
+  margin-top: 6px;
+}
+.dc-dialog {
+  max-width: 540px !important;
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+.dc-title-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  background: #1c2c38;
+  border: 1px solid #3b505e;
+  border-radius: 16px;
+  color: #c5dce9;
+}
+.dc-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dc-choices button {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 18px;
+  background: #14222d;
+  border: 1px solid #354957;
+  border-radius: 16px;
+  text-align: left;
+  color: #e0eaf1;
+}
+.dc-choices button:hover {
+  border-color: #95bbce;
+  background: #1b2d3a;
+}
+.dc-choices small {
+  display: block;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #99adbd;
+  margin-top: 6px;
+}
+.dc-label,
+.dc-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  color: #b6c9d7;
+  font-size: 14px;
+}
+.dc-dialog input,
+.dc-dialog select {
+  min-width: 0;
+  width: 100%;
+  background: #0e1922;
+  border: 1px solid #405563;
+  border-radius: 10px;
+  color: #e2ecf3;
+  padding: 12px;
+  font-size: 16px;
+  min-height: 46px;
+}
+.dc-dialog input:focus,
+.dc-dialog select:focus {
+  outline: 2px solid #9bc1d7;
+  outline-offset: 2px;
+}
+.dc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.dc-form > .da-primary {
+  width: 100%;
+  justify-content: center;
+}
+.dc-steps {
+  list-style: decimal;
+  padding-left: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  color: #cadce8;
+  margin: 6px 0;
+}
+.dc-steps li {
+  padding-left: 5px;
+}
+.dc-steps b {
+  font-size: 16px;
+  font-weight: 500;
+}
+.dc-steps p,
+.dc-details p,
+.dc-manage p {
+  font-size: 14px !important;
+  line-height: 1.65 !important;
+  color: #99aebb;
+  margin: 8px 0 12px;
+}
+.dc-command {
+  display: block;
+  padding: 12px;
+  background: #0a131b;
+  border-radius: 9px;
+  font-size: 13px;
+  color: #c5dbe8;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  user-select: all;
+}
+.dc-help-link {
+  display: inline-flex;
+  padding: 12px;
+  color: #a9c5d7;
+  font-size: 14px;
+}
+.dc-details {
+  padding: 14px 0;
+  border-top: 1px solid #304553;
+}
+.dc-details summary {
+  cursor: pointer;
+  min-height: 36px;
+  font-size: 14px;
+  color: #b6cbd9;
+}
+.dc-details a {
+  font-size: 14px;
+  color: #b2d1e5;
+}
+.dc-manage {
+  border-top: 1px solid #304553;
+  padding-top: 12px;
+}
+.fl-compute-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0 18px;
+  color: #9ab0c0;
+  font-size: 14px;
+}
+.fl-compute-status span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.fl-compute-status button {
+  flex: none;
+  min-height: 44px;
+}
+@media (max-width: 600px) {
+  .dc-dialog {
+    width: calc(100vw - 24px) !important;
+    padding: 22px 18px !important;
+  }
+  .da-compute-trigger {
+    gap: 6px;
+    padding: 8px 6px;
+    font-size: 13px;
+  }
+  .da-composer-pickers .da-model-trigger {
+    max-width: 52%;
+  }
+  .fl-compute-status {
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+  }
+  .dc-choices button {
+    padding: 18px 14px;
+  }
+  .dc-steps {
+    padding-left: 20px;
+  }
+  .dc-steps .da-primary {
+    font-size: 14px !important;
+  }
+}
+.dc-instant {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 16px;
+  margin: 8px 0;
+  background: #152234;
+  border: 1px solid #36587a;
+  border-radius: 14px;
+  text-align: left;
+  color: #dceaff;
+}
+.dc-instant > span {
+  flex: 1;
+  min-width: 0;
+}
+.dc-instant strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 550;
+}
+.dc-instant small {
+  display: block;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #a4b8d0;
+  margin-top: 5px;
+}
+.dc-instant:hover {
+  background: #1b2c42;
+}
+.dc-instant:disabled {
+  opacity: 0.65;
+}
+.dc-instant:focus-visible {
+  outline: 2px solid #aacfff;
+  outline-offset: 3px;
+}

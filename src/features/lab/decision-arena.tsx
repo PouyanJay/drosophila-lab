@@ -1,0 +1,186 @@
+'use client';
+import { useEffect, useRef, useState } from 'react';
+import * as THREE from 'three';
+export default function DecisionArena({
+  trial,
+  time,
+  color,
+  label,
+}: {
+  trial: any;
+  time: number;
+  color: string;
+  label: string;
+}) {
+  const el = useRef<HTMLDivElement>(null),
+    api = useRef<any>(null),
+    [fallback, setFallback] = useState(false);
+  useEffect(() => {
+    if (!el.current) return;
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    } catch {
+      setFallback(true);
+      return;
+    }
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setClearColor(0, 0);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    el.current.appendChild(renderer.domElement);
+    const scene = new THREE.Scene(),
+      camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    camera.position.set(0, 8, 10);
+    camera.lookAt(0, 0, -1);
+    scene.add(new THREE.HemisphereLight(0xeaf4ff, 0x111c2a, 3));
+    const light = new THREE.DirectionalLight(0xffffff, 3);
+    light.position.set(0, 5, 3);
+    scene.add(light);
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(14, 15),
+      new THREE.MeshStandardMaterial({ color: 0x101922, roughness: 0.8 }),
+    );
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+    const grid = new THREE.GridHelper(14, 28, 0x2b3a46, 0x1b2833);
+    grid.position.y = 0.005;
+    scene.add(grid);
+    const line = (points: number[][]) => {
+      const curve = new THREE.CatmullRomCurve3(
+        points.map((p) => new THREE.Vector3(...(p as [number, number, number]))),
+      );
+      const m = new THREE.Mesh(
+        new THREE.TubeGeometry(curve, 32, 0.035, 6, false),
+        new THREE.MeshBasicMaterial({ color: 0x526372 }),
+      );
+      scene.add(m);
+    };
+    line([
+      [0, 0.05, 4],
+      [0, 0.05, 0],
+      [-3, 0.05, -3],
+    ]);
+    line([
+      [0, 0.05, 4],
+      [0, 0.05, 0],
+      [3, 0.05, -3],
+    ]);
+    const gates = [-3, 3].map((x) => {
+      const gate = new THREE.Mesh(
+        new THREE.BoxGeometry(1.4, 1.4, 0.15),
+        new THREE.MeshPhysicalMaterial({
+          color: 0x293b48,
+          metalness: 0.3,
+          roughness: 0.25,
+          transparent: true,
+          opacity: 0.75,
+        }),
+      );
+      gate.position.set(x, 0.7, -3);
+      scene.add(gate);
+      return gate;
+    });
+    const marker = new THREE.Mesh(
+      new THREE.SphereGeometry(0.2, 24, 16),
+      new THREE.MeshStandardMaterial({
+        color,
+        emissive: color,
+        emissiveIntensity: 0.5,
+        metalness: 0.4,
+        roughness: 0.2,
+      }),
+    );
+    scene.add(marker);
+    api.current = { marker, gates, renderer, scene, camera };
+    const resize = () => {
+      const w = el.current?.clientWidth || 300,
+        h = el.current?.clientHeight || 300;
+      renderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.render(scene, camera);
+    };
+    const observer = new ResizeObserver(resize);
+    observer.observe(el.current);
+    resize();
+    return () => {
+      observer.disconnect();
+      scene.traverse((o: any) => {
+        o.geometry?.dispose();
+        o.material?.dispose();
+      });
+      renderer.dispose();
+      renderer.domElement.remove();
+      api.current = null;
+    };
+  }, [color]);
+  useEffect(() => {
+    const a = api.current;
+    if (!a || !trial) return;
+    const decision = trial.probability >= 0.5 ? 1 : -1,
+      u = Math.max(0, Math.min(1, time));
+    a.marker.position.set(
+      u > 0.65 ? (decision * 3 * (u - 0.65)) / 0.35 : 0,
+      0.23,
+      u < 0.65 ? 4 - (4 * u) / 0.65 : (-3 * (u - 0.65)) / 0.35,
+    );
+    const cue = trial.xs[Math.min(trial.xs.length - 1, Math.floor(time * trial.xs.length))];
+    a.gates.forEach((gate: any, i: number) => {
+      gate.material.color.set(
+        time >= 1
+          ? i === trial.y
+            ? '#9ac6ff'
+            : '#293b48'
+          : Math.abs(cue) > 0.1 && i === +(cue > 0)
+            ? color
+            : '#293b48',
+      );
+      gate.material.emissive.copy(gate.material.color).multiplyScalar(0.16);
+    });
+    a.renderer.render(a.scene, a.camera);
+  }, [trial, time, color, fallback]);
+  const direction = trial?.probability >= 0.5 ? 1 : -1,
+    x = time > 0.65 ? 160 + (direction * 90 * (time - 0.65)) / 0.35 : 160,
+    y = time < 0.65 ? 240 - (90 * time) / 0.65 : 150 - (80 * (time - 0.65)) / 0.35;
+  return (
+    <div className="da-world" ref={el} aria-label={label + ' decision arena'}>
+      {fallback && (
+        <svg viewBox="0 0 320 290" role="img" aria-label={label + ' schematic decision replay'}>
+          <path
+            d="M160 240V150L70 70M160 150L250 70"
+            fill="none"
+            stroke="#3e5264"
+            strokeWidth="2"
+          />
+          {[70, 250].map((gx, i) => (
+            <rect
+              key={i}
+              x={gx - 20}
+              y="42"
+              width="40"
+              height="40"
+              rx="4"
+              fill={time >= 1 && i === trial?.y ? '#9ac6ff' : '#243647'}
+            />
+          ))}
+          <circle cx={x} cy={y} r="8" fill={color} />
+          <text x="160" y="280" textAnchor="middle" fill="#8798a8" fontSize="12">
+            2D decision replay · WebGL unavailable
+          </text>
+        </svg>
+      )}
+      <div className="da-world-label">
+        <i style={{ background: color }} />
+        {label}
+      </div>
+      <div className="da-world-decision">
+        {time < 1 ? 'Observing the same trial' : trial?.correct ? 'Correct gate' : 'Incorrect gate'}
+        <span>
+          {time >= 1
+            ? `${Math.round((trial?.probability || 0) * 100)}% P(right)`
+            : 'Checkpoint decision playback'}
+        </span>
+      </div>
+    </div>
+  );
+}

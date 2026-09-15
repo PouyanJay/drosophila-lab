@@ -1,10 +1,10 @@
 # Drosophila Research Studio
 
-**Architecture discovery:** [DISCOVERY.md](DISCOVERY.md) explains the reusable structural search worker, three built-in tasks, custom adapters and versioned brain exports. See [VALIDATION-DISCOVERY.md](VALIDATION-DISCOVERY.md) for measured verification and remaining environment limitations.
+**Architecture discovery:** [docs/discovery.md](docs/discovery.md) explains the reusable structural search worker, three built-in tasks, custom adapters and versioned brain exports. See [docs/validation-discovery.md](docs/validation-discovery.md) for measured verification and remaining environment limitations.
 
-**Local Supabase edition:** start with [LOCAL-WORKSPACE.md](LOCAL-WORKSPACE.md).
+**Local Supabase edition:** start with [docs/local-workspace.md](docs/local-workspace.md).
 The app, database, atlas assets and trainer now run locally. No hosted deployment is required.
-The hosted-service instructions below describe the earlier version.
+Optional remote trainer instructions are included below.
 
 A MaleCNS anatomical atlas and full-connectome architecture research workbench.
 
@@ -12,11 +12,11 @@ The main app opens as one research workspace: a persistent atlas, collapsible ex
 
 The browser worker downloads and verifies approximately 53 MB of typed source arrays, retains the complete 165,122-neuron graph, and runs real training, validation, held-out evaluation, latency timing and recurrent-edge ablation. The browser engine trains a 55-parameter logistic decision readout on class mean and squared activity features; recurrent dynamics are fixed. It is not the differentiable Python engine. Source-derived copies inherit adjacency and body IDs; optional slow decay and count-threshold pruning are explicit model changes. In-progress browser computation stops when the tab closes.
 
-The conversational guide supports selectable OpenAI and Claude models in the composer. The model menu verifies connections and retrieves each account's live supported model list. A user can add an existing API key through Connections; server routes authenticate the signed-in Site user and encrypt personal keys in D1 using AES-GCM with per-user/provider authenticated context. `PROVIDER_ENCRYPTION_KEY` is provisioned as a Sites secret and must be preserved: rotating it requires re-encrypting or reconnecting stored credentials. Keys never enter conversation records or browser storage. Optional `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` site-level secrets remain supported. OpenAI API-key creation, when requested, uses the OpenAI Developers plugin; the connection form accepts already-provisioned keys.
+The conversational guide supports selectable OpenAI and Claude models in the composer. The model menu verifies connections and retrieves each account's live supported model list. A user can add an existing API key through Connections; server routes identify the local workspace owner and encrypt personal keys in local Supabase Postgres using AES-GCM with owner/provider authenticated context. `PROVIDER_ENCRYPTION_KEY` is generated in the ignored `.env.local` file and must be preserved: rotating it requires re-encrypting or reconnecting stored credentials. Keys never enter conversation records or browser storage. Optional `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` environment variables remain supported. The connection form accepts existing provider API keys.
 
 `/api/guide` calls OpenAI Responses or Anthropic Messages with the selected model, prior conversation, current plan, and measured evidence summary. Both providers return validated structured plans. Claude schemas omit unsupported numeric constraints, which are checked server-side with Zod. Provider errors never silently switch models or fall back to the offline guide. The explicit Offline guide remains available from the model menu. Replies retain their provider/model identity when switching. An explicit Run action starts training after plan review.
 
-Evidence includes live learning curves, paired checkpoint decisions in a Three.js arena, a full test-trial matrix, seed variation, confidence intervals, and ablation. The arena's movement is schematic decision playback, not a learned embodied navigation policy. Results and conversation drafts are stored in D1, with export available on failure.
+Evidence includes live learning curves, paired checkpoint decisions in a Three.js arena, a full test-trial matrix, seed variation, confidence intervals, and ablation. The arena's movement is schematic decision playback, not a learned embodied navigation policy. Results and conversation drafts are stored in local Supabase Postgres, with export available on failure.
 
 The earlier full-graph differentiable Python workbench is retained at `/archive`, and the bounded circuit workbench at `/circuits`. A permanent external GPU training or embodied simulation service is still **not attached**.
 
@@ -51,31 +51,30 @@ These small experiments do not establish statistical significance, broad general
 
 ## App structure
 
-- `app/workbench.tsx`, `app/workbench.css`: full-network research studio.
-- `app/atlas-view.tsx`: shared real-anatomy viewer and source-ancestry highlighting.
-- `app/api/records`: validated D1 experiment/job/result persistence; preserves older graph/run records.
-- `app/api/morphology`: official SWC lookup by numeric body ID.
+- `src/features/studio/`: the primary atlas and experiment workspace.
+- `src/features/archive/`: the retained full-network research workbench.
+- `src/features/atlas/atlas-view.tsx`: shared real-anatomy viewer and source-ancestry highlighting.
+- `src/app/api/records`: validated local Postgres experiment/job/result persistence; preserves older graph/run records.
+- `src/app/api/morphology`: official SWC lookup by numeric body ID.
 - `/circuits`: earlier 192-neuron circuit workspace retained for existing work.
 - `research/`: CPU/CUDA model, data preparation, evaluation, numerical tests and protocol.
 - `scripts/data/`: reproducible atlas source extraction, morphology and mesh simplification.
 
 ## Validation
 
-`python research/test_runner.py` checks sparse direction/gradients, source-copy adjacency inheritance, original-graph immutability and gradients through recurrent parameters. Recorded checkpoint replay is verified against saved accuracy. `node node_modules/typescript/bin/tsc --noEmit` checks the app. Use the Sites build script for deployment; this is a Vinext / Cloudflare Worker app with D1.
+`python research/test_runner.py` checks sparse direction/gradients, source-copy adjacency inheritance, original-graph immutability and gradients through recurrent parameters. Recorded checkpoint replay is verified against saved accuracy. `node node_modules/typescript/bin/tsc --noEmit` checks the app. Use `npm run check` and `npm run build` for the local Next.js application. See [Contributing](CONTRIBUTING.md) and [Architecture](docs/architecture.md).
 
 Data attribution: FlyEM (HHMI Janelia), University of Cambridge, MRC Laboratory of Molecular Biology and Google Research. MaleCNS data is licensed CC BY 4.0; source URLs and checksums are retained in `public/malecns/manifest.json` and `public/research/graph.json`.
-
 
 ## Browser experiment verification
 
 `node scripts/research/check-browser-engine.mjs` validates the full retained node/edge counts, row normalization, sparse recurrence against an independent scalar calculation, source-copy ancestry, dataset separation, completed metrics and exact checkpoint prediction replay. `--study` runs a three-seed noisy-evidence comparison and saves a clearly labelled development-CPU example for inspection. These checks execute the actual engine, not mocked curves. They do not test physical-device WebGL rendering or AI-provider responses; no provider credential is configured.
 
-`node --experimental-strip-types scripts/research/check-planner.mjs` checks the guided plan flow and result persistence validation. `scripts/research/export-browser.py` deterministically exports typed CSR arrays from the prepared full graph with per-part SHA-256 fingerprints.
-
+`node scripts/research/check-planner.mjs` checks the guided plan flow and result persistence validation. `scripts/research/export-browser.py` deterministically exports typed CSR arrays from the prepared full graph with per-part SHA-256 fingerprints.
 
 ## Model connection verification
 
-`node scripts/research/check-providers.mjs` verifies encryption/context isolation, model-list filtering, both provider HTTP contracts, preserved conversation context, response validation and invalid-key handling. These provider-response checks use mocks; live model inference requires a real API key. The provider connection form verifies the key against its actual model-list endpoint before storing it. D1 migration 0001 adds a separate account-scoped encrypted credential table without changing existing records.
+`node scripts/research/check-providers.mjs` verifies encryption/context isolation, model-list filtering, both provider HTTP contracts, preserved conversation context, response validation and invalid-key handling. These provider-response checks use mocks; live model inference requires a real API key. The provider connection form verifies the key against its actual model-list endpoint before storing it. The local Supabase migration defines a separate owner-scoped encrypted credential table.
 
 ## Persistent reproducible lab (milestone 1)
 
@@ -91,7 +90,7 @@ The bundled `public/research/lab-example.json` is a real three-seed, 12-update f
 
 ## Unified experiment conversation
 
-The full validated `LabConfig` is shared by the agent, inline settings and submission; legacy browser `Plan` is not used to reconstruct persistent run settings. Both provider contracts include the exact draft and selected immutable job context. The host executes explicit action intents and reports actual acknowledgments. A revised draft cannot auto-start. Sessions retain the draft, engine and selected run in D1; job progress/results remain authoritative on the trainer.
+The full validated `LabConfig` is shared by the agent, inline settings and submission; legacy browser `Plan` is not used to reconstruct persistent run settings. Both provider contracts include the exact draft and selected immutable job context. The host executes explicit action intents and reports actual acknowledgments. A revised draft cannot auto-start. Sessions retain the draft, engine and selected run in local Postgres; job progress/results remain authoritative on the trainer.
 
 `node scripts/research/check-conversation.mjs` verifies full configuration edits, action intent, provider context and session validation. Provider calls in this check are mocked. Live model inference and personal-machine training require the user’s connections.
 

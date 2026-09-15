@@ -1,20 +1,44 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-let downloads=0;
-globalThis.fetch=async path=>{assert(path.startsWith('/research/browser/'));downloads++;return new Response(await fs.readFile(new URL('../../public'+path,import.meta.url)));};
-const events=[];
-globalThis.self={postMessage:event=>events.push(event)};
+let downloads = 0;
+globalThis.fetch = async (path) => {
+  assert(path.startsWith('/research/browser/'));
+  downloads++;
+  return new Response(await fs.readFile(new URL('../../public' + path, import.meta.url)));
+};
+const events = [];
+globalThis.self = { postMessage: (event) => events.push(event) };
 await import('../../public/research/full-worker.js');
-await self.onmessage({data:{type:'prepare'}});
-assert.equal(events.at(-1).type,'ready',JSON.stringify(events.at(-1)));
-assert.equal(events.at(-1).backend,'cpu');
-assert.equal(events.at(-1).neurons,165122);
-const preparedDownloads=downloads;
-await self.onmessage({data:{config:{task:'beacon',duplicates:0,prune:0,memory:false,population:'cb_intrinsic',budget:'quick',seeds:1,epochs:5,seed:41}}});
-assert.equal(events.at(-1).type,'complete',JSON.stringify(events.at(-1)));
-assert.equal(downloads,preparedDownloads,'Prepared graph must be reused without downloading again');
-const result=events.at(-1).data;
-assert.equal(result.backend,'cpu');
-assert.equal(result.delta,0,'Identical baseline and candidate must have the same accuracy');
-assert.deepEqual(result.models[0].runs[0].trials,result.models[1].runs[0].trials);
-console.log('PASS: prepare, checksummed graph, CPU fallback, reuse, training, validation and paired test');
+await self.onmessage({ data: { type: 'prepare' } });
+assert.equal(events.at(-1).type, 'ready', JSON.stringify(events.at(-1)));
+assert.equal(events.at(-1).backend, 'cpu');
+assert.equal(events.at(-1).neurons, 165122);
+const preparedDownloads = downloads;
+await self.onmessage({
+  data: {
+    config: {
+      task: 'beacon',
+      duplicates: 0,
+      prune: 0,
+      memory: false,
+      population: 'cb_intrinsic',
+      budget: 'quick',
+      seeds: 1,
+      epochs: 5,
+      seed: 41,
+    },
+  },
+});
+assert.equal(events.at(-1).type, 'complete', JSON.stringify(events.at(-1)));
+assert.equal(
+  downloads,
+  preparedDownloads,
+  'Prepared graph must be reused without downloading again',
+);
+const result = events.at(-1).data;
+assert.equal(result.backend, 'cpu');
+assert.equal(result.delta, 0, 'Identical baseline and candidate must have the same accuracy');
+assert.deepEqual(result.models[0].runs[0].trials, result.models[1].runs[0].trials);
+console.log(
+  'PASS: prepare, checksummed graph, CPU fallback, reuse, training, validation and paired test',
+);

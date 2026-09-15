@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: research/lab/Dockerfile.local
     ports:
-      - "127.0.0.1:8000:8000"
+      - '127.0.0.1:8000:8000'
     environment:
       DATABASE_URL: ${TRAINER_DATABASE_URL:?Start with the local launcher}
       LAB_SERVICE_TOKEN: ${LAB_SERVICE_TOKEN:?Start with the local launcher}
