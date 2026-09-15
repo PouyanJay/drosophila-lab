@@ -1,0 +1,14 @@
+.git
+node_modules
+.next
+.venv
+.env*
+.local-data
+.validation
+backups
+.agents
+.claude
+.codex
+
+**/__pycache__
+**/*.py[cod]

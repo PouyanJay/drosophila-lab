@@ -1,7 +1,9 @@
 """Generate display LOD only. Connectivity and neuron data are untouched."""
 
 import argparse
-import json, struct, hashlib, os
+import json
+import struct
+import hashlib
 from pathlib import Path
 import numpy as np
 import fast_simplification

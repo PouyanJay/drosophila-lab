@@ -6,6 +6,14 @@
 The app, database, atlas assets and trainer now run locally. No hosted deployment is required.
 Optional remote trainer instructions are included below.
 
+## Run locally
+
+```sh
+make run
+```
+
+This resolves the pinned web and uv/Python dependencies, starts/reuses Docker and the local database/trainer, and launches the website. Read the printed URL: busy defaults get alternative ports. `make help`, `make status`, `make logs`, and `make stop` cover day-to-day operations. See [local setup and prerequisites](docs/local-workspace.md).
+
 A MaleCNS anatomical atlas and full-connectome architecture research workbench.
 
 The main app opens as one research workspace: a persistent atlas, collapsible experiment conversation and an evidence drawer. It supports both persistent full-network training and executable whole-graph browser readout experiments. Three.js renders the actual segmented anatomy, with selection, source morphology search, isolation, hiding, cutaway, and an assembled-to-inventory slider. Inventory pieces are fitted to cells for inspection, not shown at relative anatomical scale.

@@ -1,6 +1,8 @@
 """Reproducible public MaleCNS v1.0 extract. Never generates biological edges."""
 
-import argparse, json, os, hashlib, concurrent.futures, urllib.request, struct
+import argparse
+import json
+import hashlib
 from pathlib import Path
 import numpy as np
 import pyarrow.feather as feather

@@ -1,0 +1,5 @@
+name = "web-code-reviewer"
+description = "Review Next.js and React behavior, boundaries, and lifecycle changes."
+developer_instructions = """
+Read CLAUDE.md and .claude/agents/web-code-reviewer.md before reviewing. Follow its Markdown body; Claude frontmatter is not Codex configuration. Use available equivalent tools and stay within the requested review scope. Do not edit files.
+"""

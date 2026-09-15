@@ -1,6 +1,9 @@
 """Package only trainer source, pinned graph and operator guide. No credentials/runs."""
 
-import argparse, hashlib, json, zipfile
+import argparse
+import hashlib
+import json
+import zipfile
 from pathlib import Path
 
 p = argparse.ArgumentParser()

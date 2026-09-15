@@ -1,10 +1,16 @@
-import io, json, os, stat, tempfile, unittest, zipfile, sys
+import io
+import json
+import stat
+import tempfile
+import unittest
+import zipfile
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from research.lab.connected import service_token
-from research.lab.connection_export import export
+from research.lab.connected import service_token  # noqa: E402 -- standalone script adds repo root
+from research.lab.connection_export import export  # noqa: E402
 
 
 class SetupTests(unittest.TestCase):

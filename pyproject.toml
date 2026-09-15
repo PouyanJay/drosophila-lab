@@ -1,3 +1,28 @@
+[project]
+name = "drosophila-lab"
+version = "0.1.0"
+description = "Local MaleCNS research workspace and numerical trainer"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "numpy==2.2.6", "scipy==1.15.3", "torch==2.5.1",
+  "fastapi==0.115.12", "uvicorn==0.34.2", "httpx==0.28.1",
+  "psycopg[binary]==3.2.9", "pandas>=2.2,<3", "pyarrow>=18,<25",
+]
+
+[dependency-groups]
+dev = ["ruff==0.12.12", "pyyaml>=6,<7"]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
 [tool.ruff]
 target-version = "py311"
 line-length = 100

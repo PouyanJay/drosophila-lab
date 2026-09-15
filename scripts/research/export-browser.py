@@ -1,6 +1,9 @@
 """Export the retained observed MaleCNS graph, without subsampling, for Web Workers."""
 
-import json, hashlib, pathlib, sys
+import json
+import hashlib
+import pathlib
+import sys
 import numpy as np
 from scipy.sparse import load_npz
 

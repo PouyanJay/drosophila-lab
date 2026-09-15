@@ -2,31 +2,32 @@
 
 ## Setup and checks
 
-Use Node 22.13 or newer. Install exactly the committed dependencies:
+Install the locked dependencies and run repository checks:
 
 ```sh
-npm run install:ci
-npm run check
-npm run build
+make setup
+make check
 ```
 
 The installer runs the pnpm version pinned in `package.json`; a global pnpm or Corepack installation is unnecessary. Use `npx pnpm@11.25.0 add PACKAGE` when intentionally changing dependencies, and commit the resulting lockfile.
 
-`check` runs formatting, route/type generation, lint, persistence tests, and the browser/research checks. Provider and trainer HTTP calls in those tests are mocked. Full-graph CPU checks take longer than the small unit tests.
+`make check` aggregates formatting, route/type generation, lint, agent validation, web/Python tests, browser/research checks, and the production build. Docker is not required for these checks. Direct `npm test` also requires uv for the lifecycle lock tests. Provider and trainer HTTP calls in those tests are mocked. Full-graph CPU checks take longer than the small unit tests.
 
-For the Python numerical suites, use an isolated Python 3.11 environment:
+Use `make run` to start the full local development environment. Python is managed by `uv`, with Python 3.11 selected automatically and exact dependencies in `uv.lock`:
 
 ```sh
-python3.11 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements-dev.txt
-npm run test:python
-python -m ruff format --check scripts research/export_ancestry.py
+uv sync --frozen
+make test-python
+make lint
 ```
 
-On Windows, activate `.venv\Scripts\Activate.ps1`. Run Python tests through the provided command: discovery tests patch fully qualified `research.lab` modules, so importing the same package as `lab` changes the test's behavior.
+Use `uv add` (or `uv add --group dev`) to change dependencies and commit the updated lock. No manual virtualenv activation or system pip installation is needed. `research/lab/requirements.lock` and the archived requirements remain part of the historical downloadable trainer; the maintained local Docker image uses `uv.lock`.
 
-Running the complete local application additionally requires Docker; see [Local workspace](docs/local-workspace.md). The optional `node scripts/test-local-stack.mjs` check creates a real training run in an already-running workspace.
+The Makefile follows [Lunaris's adapted conventions](.claude/docs/reference/MAKEFILE.md). `make help` lists all commands. `make run` bootstraps Node/uv when needed, synchronizes dependencies, starts Docker/Supabase/trainer, applies migrations, and reports the actual website URL. Repeated invocations reuse healthy owned services. See [Local workspace](docs/local-workspace.md) for platform prerequisites, ports, logs, stop/recovery, and backups.
+
+## Coding agents
+
+Read [CLAUDE.md](CLAUDE.md), also exposed as `AGENTS.md`. Shared skills live in `.claude/skills`, exposed to Codex through `.agents/skills`. Claude reviewers live in `.claude/agents` and have corresponding `.codex/agents` registrations. Use `make check-agents` to verify discovery/metadata and Git visibility. All these files belong in Git; do not add them to ignore rules. See [Toolkit adaptation](.claude/ADAPTATION.md) for the inventory and intentionally omitted Lunaris-specific tooling.
 
 ## Where code belongs
 

@@ -1,0 +1,5 @@
+name = "coding-style-reviewer"
+description = "Review module structure and maintainability across the stack."
+developer_instructions = """
+Read CLAUDE.md and .claude/agents/coding-style-reviewer.md before reviewing. Follow its Markdown body; Claude frontmatter is not Codex configuration. Use available equivalent tools and stay within the requested review scope. Do not edit files.
+"""

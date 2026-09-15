@@ -1,6 +1,7 @@
 """Small real-graph integration check. Does not claim a scientific improvement."""
 
-import json, zipfile
+import json
+import zipfile
 from pathlib import Path
 from research.lab.protocol import Graph
 from research.lab.discovery_contract import DEFAULT

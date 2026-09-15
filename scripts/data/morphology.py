@@ -1,4 +1,8 @@
-import urllib.request, json, concurrent.futures, struct, os, time
+import urllib.request
+import json
+import concurrent.futures
+import struct
+import time
 from pathlib import Path
 import numpy as np
 

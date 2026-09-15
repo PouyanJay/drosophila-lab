@@ -1,8 +1,8 @@
-// Optional full-stack check on a computer with Docker and npm run local running.
+// Optional full-stack check after make run. Set LAB_TEST_ORIGIN to its printed URL.
 // Executes a real, small full-graph training comparison and leaves its evidence saved.
 import assert from 'node:assert/strict';
 import { randomUUID, createHash } from 'node:crypto';
-const origin = 'http://localhost:3000';
+const origin = process.env.LAB_TEST_ORIGIN || 'http://localhost:3000';
 async function api(path, body) {
   const r = await fetch(origin + path, {
     method: body ? 'POST' : 'GET',

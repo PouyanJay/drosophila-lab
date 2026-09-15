@@ -1,0 +1,5 @@
+name = "supabase-security-reviewer"
+description = "Review Postgres migrations, grants, owner isolation, and durable storage."
+developer_instructions = """
+Read CLAUDE.md and .claude/agents/supabase-security-reviewer.md before reviewing. Follow its Markdown body; Claude frontmatter is not Codex configuration. Use available equivalent tools and stay within the requested review scope. Do not edit files.
+"""
