@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { root, run, installDependencies } from './lib/workspace.mjs';
-import { step, summary } from './lib/ui.mjs';
+import { step, summary, finish, failure } from './lib/ui.mjs';
 import {
   startStack,
   stopStack,
@@ -45,12 +45,13 @@ export function runChecks(checks, execute = run) {
   const results = [];
   for (const [name, command, args] of checks) {
     step(name);
+    const started = performance.now();
     try {
       execute(command, args);
-      results.push({ name, ok: true });
+      results.push({ name, ok: true, ms: performance.now() - started });
     } catch (error) {
-      console.error(error.message);
-      results.push({ name, ok: false });
+      failure(error.message);
+      results.push({ name, ok: false, ms: performance.now() - started });
     }
   }
   summary(results);
@@ -143,10 +144,13 @@ async function main(action) {
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   mkdirSync('.local-data', { recursive: true });
+  const action = process.argv[2] || 'help';
+  const started = performance.now();
   try {
-    await main(process.argv[2] || 'help');
+    await main(action);
   } catch (error) {
-    console.error('Lab: ' + error.message);
+    failure(error.message);
     process.exitCode = 1;
   }
+  finish(action, performance.now() - started, !process.exitCode);
 }

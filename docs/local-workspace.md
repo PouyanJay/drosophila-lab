@@ -32,6 +32,8 @@ Derived Supabase configuration/migrations and process records live in `.local-da
 
 ## Operations
 
+Make commands share a Drosophila Lab heading, numbered progress steps, and timed completion summaries. Help groups commands by workflow. Checks show every suite result and a pass/fail total. Colors are enabled on supported terminals; use `NO_COLOR=1 make run` for plain output. Redirected output stays free of ANSI colors, and command diagnostics remain visible.
+
 | Command                              | Behavior                                                                   |
 | ------------------------------------ | -------------------------------------------------------------------------- |
 | `make setup`                         | Synchronize locked web and Python dependencies                             |

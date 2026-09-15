@@ -3,32 +3,11 @@ set -euo pipefail
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$project_root"
 export PATH="$project_root/.local-data/tools/node/bin:$project_root/.local-data/tools/uv:$HOME/.local/bin:$PATH"
+source "$project_root/scripts/lib/ui.sh"
+lab_banner "${1:-help}"
 # Help is available even before language runtimes are installed.
 if [[ "${1:-help}" == help ]]; then
-  cat <<'HELP'
-Drosophila Lab
-  make run           Resolve dependencies, start Docker/services, launch the lab
-  make setup         Install locked web and uv/Python dependencies
-  make start         Start/reuse services after setup
-  make stop          Stop this lab; preserve databases and checkpoints
-  make status        Show running services, ports and log paths
-  make check-ports   Inspect preferred ports without modifying services
-  make logs          Follow the website log (trainer: docker compose logs)
-  make test          Run all web, research and Python suites; aggregate failures
-  make test-web      Run Node persistence/data tests
-  make test-research Run full browser and HTTP contract checks
-  make test-python   Run uv-managed numerical tests
-  make lint          Run web/Python checks and validate agent configuration
-  make lint-fix      Format/fix maintained code, then verify
-  make build         Build the production website
-  make check         Run all linters, tests, and production build
-  make check-agents  Validate shared instructions, skills and reviewer registrations
-  make backup        Stop website and create a private database/artifact backup
-  make restore BACKUP=backups/FOLDER   Restore into an empty workspace
-Overrides: WEB_PORT=3000 TRAINER_PORT=8000 SUPABASE_PORT_BASE=54320
-Occupied default ports get alternatives. Explicit occupied ports fail safely.
-Runtime logs/config/state: .local-data/; secrets: .env.local (preserved).
-HELP
+  source "$project_root/scripts/help.sh"
   exit 0
 fi
 if ! command -v node >/dev/null || ! node -e 'let [a,b]=process.versions.node.split(".").map(Number);process.exit(a>22||(a===22&&b>=13)?0:1)' 2>/dev/null; then

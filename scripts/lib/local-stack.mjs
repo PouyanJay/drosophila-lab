@@ -15,7 +15,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { homedir } from 'node:os';
 import { root, executable, run } from './workspace.mjs';
-import { step } from './ui.mjs';
+import { step, section } from './ui.mjs';
 import {
   readJSON,
   writeJSON,
@@ -294,9 +294,13 @@ export async function startStack() {
       newChild.unref();
       newChild = null;
     }
-    console.log(
-      `\nLab:      http://localhost:${webPort}\nTrainer:  ${values.LAB_SERVICE_URL}\nSupabase: ${status.API_URL || 'ready'}\nLogs:     ${path.join(root, '.local-data/logs/web.log')}\nStop:     make stop (data and checkpoints are retained)`,
-    );
+    section('LAB READY', [
+      ['Website', `http://localhost:${webPort}`],
+      ['Trainer', values.LAB_SERVICE_URL],
+      ['Supabase', status.API_URL || 'ready'],
+      ['Logs', '.local-data/logs/web.log'],
+      ['Stop', 'make stop (data and checkpoints retained)'],
+    ]);
   } catch (error) {
     if (newChild) {
       newChild.kill('SIGTERM');
@@ -331,20 +335,24 @@ export async function stopStack() {
         errors.push(error.message);
       }
     if (errors.length) throw Error(errors.join('\n'));
-    console.log('Lab stopped. Data, keys, and checkpoints retained.');
+    section('LAB STOPPED', [
+      ['Retained', 'Data, keys, and checkpoints'],
+      ['Restart', 'make run'],
+    ]);
   } finally {
     await release();
   }
 }
 export async function showStatus() {
   const state = readJSON(stateFile);
-  console.log(
-    (await webHealthy(state))
-      ? `Website: http://localhost:${state.port}`
-      : 'Website: stopped or unhealthy',
-  );
-  console.log(databaseStatus() ? 'Supabase: running' : 'Supabase: stopped');
-  console.log('Website log: .local-data/logs/web.log');
+  section('WORKSPACE STATUS', [
+    [
+      'Website',
+      (await webHealthy(state)) ? `http://localhost:${state.port}` : 'stopped or unhealthy',
+    ],
+    ['Supabase', databaseStatus() ? 'running' : 'stopped'],
+    ['Website log', '.local-data/logs/web.log'],
+  ]);
   if (existsSync(envFile)) run('docker', [...composeArgs, 'ps']);
 }
 export async function checkPorts() {
