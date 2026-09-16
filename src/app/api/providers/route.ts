@@ -4,6 +4,7 @@ import {
   providerStatus,
   removeProviderCredential,
   saveProviderCredential,
+  withPricing,
 } from '@/server/provider-credentials';
 import { z } from 'zod';
 const provider = z.enum(['openai', 'anthropic']);
@@ -63,7 +64,7 @@ async function mutate(request: Request, remove: boolean) {
           id: p.data,
           name: p.data === 'openai' ? 'OpenAI' : 'Claude',
           status: 'connected',
-          models,
+          models: await withPricing(p.data, models),
           hint: '•••• ' + value.data.slice(-4),
           source: 'personal',
         },

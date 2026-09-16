@@ -76,6 +76,9 @@ async function main(action) {
       if (!existsSync('node_modules/.bin/next') || !existsSync('.venv')) setup();
       await startStack();
       break;
+    case 'live-cost-check':
+      await import('./live-cost-check.mjs');
+      break;
     case 'stop':
       await stopStack();
       break;

@@ -93,3 +93,8 @@
     max-height: min(400px, var(--radix-popover-content-available-height), calc(100dvh - 24px));
   }
 }
+
+.da-model-unpriced {
+  font-style: normal;
+  color: #d9b56a;
+}

@@ -15,6 +15,11 @@ export type Message = {
   text: string;
   provider?: string;
   model?: string;
+  /**
+   * USD cost of the provider call that produced this reply: null when the model had no stored
+   * rate, 'unrecorded' when the call could not be written to the local ledger.
+   */
+  cost?: number | null | 'unrecorded';
 };
 export const defaultPlan: Plan = {
   task: '',

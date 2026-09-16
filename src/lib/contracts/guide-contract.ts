@@ -23,6 +23,7 @@ export const guideInput = z.object({
   plan: planSchema,
   messages: z.array(message).max(60),
   provider: z.enum(['openai', 'anthropic', 'guided']),
+  sessionId: z.string().max(80).optional(),
   model: z
     .string()
     .max(160)

@@ -1,4 +1,6 @@
 import { discoveryJSON, discoverySchema } from '@/lib/contracts/discovery-contract';
+import { getLocalUser } from '@/server/auth/local-user';
+import { recordUsageSafely, usageFromResponse } from '@/server/llm-costs';
 import { listProviderModels, providerFailure } from '@/server/model-providers';
 import { providerCredential } from '@/server/provider-credentials';
 import { createHash } from 'node:crypto';
@@ -7,6 +9,7 @@ const input = z.object({
   text: z.string().min(1).max(2000),
   config: discoverySchema,
   campaignId: z.string().uuid().nullable().optional(),
+  sessionId: z.string().max(80).optional(),
   provider: z.enum(['guided', 'openai', 'anthropic']),
   model: z.string().max(160),
   messages: z
@@ -166,6 +169,18 @@ export async function POST(request: Request) {
     );
     if (!r.ok) throw providerFailure(r.status, d.provider);
     const body: any = await r.json();
+    // The provider bills this reply whether or not it parses; record it before validation.
+    const cost = await recordUsageSafely({
+      userId: (await getLocalUser())?.userId ?? 'local-workspace',
+      provider: d.provider,
+      model: typeof body.model === 'string' ? body.model : d.model,
+      credentialSource: credential.source,
+      keyHint: credential.hint,
+      surface: 'discovery-guide',
+      experimentId: d.sessionId ?? null,
+      campaignId: d.campaignId ?? null,
+      usage: usageFromResponse(d.provider, body),
+    });
     if ((openai && body.status !== 'completed') || (!openai && body.stop_reason !== 'end_turn'))
       throw Error('The model did not finish. Your draft is unchanged.');
     const text = openai
@@ -178,10 +193,12 @@ export async function POST(request: Request) {
           ?.filter((o: any) => o.type === 'text')
           .map((o: any) => o.text)
           .join('');
+    const parsed = answer.parse(JSON.parse(text));
     return Response.json({
-      ...answer.parse(JSON.parse(text)),
+      ...parsed,
       provider: d.provider,
       model: d.model,
+      cost: { usd: cost.usd, priced: cost.priced, alerts: cost.alerts, recorded: cost.recorded },
     });
   } catch (e: any) {
     return Response.json(

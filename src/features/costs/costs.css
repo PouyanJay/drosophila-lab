@@ -1,0 +1,436 @@
+/* Spending dashboard: sits on the studio's dark dialog surface. */
+.da-dialog.cd-dialog {
+  width: calc(100vw - 32px) !important;
+  max-width: 1080px !important;
+  max-height: 92vh;
+  overflow: auto;
+}
+.cd-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid #26313f;
+  margin: 8px 0 12px;
+}
+.cd-tabs button {
+  padding: 8px 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: #97a6b8;
+  font-size: 0.85rem;
+}
+.cd-tabs button.active {
+  color: #ecf0f5;
+  border-bottom-color: #b9ed82;
+}
+.cd-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.cd-chip {
+  padding: 4px 10px;
+  border: 1px solid #344151;
+  border-radius: 999px;
+  background: transparent;
+  color: #b8c4d2;
+  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.cd-chip.active {
+  background: #263349;
+  border-color: #3d4d66;
+  color: #ecf0f5;
+}
+.cd-chip-remove {
+  border-style: dashed;
+}
+.cd-status,
+.cd-note {
+  color: #97a6b8;
+  font-size: 0.78rem;
+}
+.cd-error {
+  color: #f19393;
+  font-size: 0.85rem;
+}
+.cd-error button {
+  margin-left: 8px;
+  text-decoration: underline;
+  background: none;
+  border: 0;
+}
+.cd-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.cd-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.cd-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid #26313f;
+  border-radius: 12px;
+  background: #111720;
+}
+.cd-tile span,
+.cd-tile small {
+  color: #97a6b8;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+.cd-tile strong {
+  font-size: 1.35rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: #ecf0f5;
+}
+.cd-chart {
+  border: 1px solid #26313f;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #111720;
+}
+.cd-chart header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.cd-chart h3,
+.cd-breakdown h3 {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #b8c4d2;
+  letter-spacing: 0.04em;
+}
+.cd-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #97a6b8;
+}
+.cd-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-left: 10px;
+}
+.cd-legend i:first-child {
+  margin-left: 0;
+}
+.cd-chart-area {
+  height: 220px;
+}
+.cd-table-view summary {
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: #97a6b8;
+  margin-top: 6px;
+}
+.cd-breakdowns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 12px 20px;
+}
+.cd-breakdown ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cd-breakdown button {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.6fr) 1.4fr auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  text-align: left;
+  font-size: 0.78rem;
+  color: #d5dde7;
+}
+.cd-breakdown button:hover {
+  background: #1a2330;
+}
+.cd-breakdown button[aria-pressed='true'] {
+  border-color: #3d4d66;
+  background: #263349;
+}
+.cd-bar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cd-bar-track {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: #1f2937;
+  overflow: hidden;
+}
+.cd-bar-track i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: #66a834;
+}
+.cd-bar-value {
+  font-variant-numeric: tabular-nums;
+  color: #b8c4d2;
+}
+.cd-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.cd-table th,
+.cd-table td,
+.cd-table-view th,
+.cd-table-view td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid #1f2937;
+  vertical-align: top;
+  font-variant-numeric: tabular-nums;
+}
+.cd-table th {
+  color: #97a6b8;
+  font-weight: 500;
+}
+.cd-table td small {
+  display: block;
+  color: #7f8fa3;
+  font-size: 0.7rem;
+}
+.cd-table a {
+  color: #9ac6ff;
+}
+.cd-empty {
+  color: #97a6b8;
+  font-size: 0.85rem;
+  margin: 8px 0;
+}
+.cd-pricing-head {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.cd-pricing-head p {
+  margin: 0;
+  max-width: 62ch;
+  color: #b8c4d2;
+  font-size: 0.85rem;
+}
+.cd-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  border: 1px solid #3d4d66;
+  background: #263349;
+  color: #ecf0f5;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.cd-primary:disabled {
+  opacity: 0.5;
+}
+.cd-spin {
+  animation: cd-spin 1s linear infinite;
+}
+@keyframes cd-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cd-spin {
+    animation: none;
+  }
+}
+.cd-step {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+}
+.cd-step label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.cd-step input {
+  width: 90px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #344151;
+  background: #0b0f16;
+  color: #ecf0f5;
+}
+.cd-alerts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cd-alerts li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #5a4a2a;
+  border-radius: 10px;
+  background: #1c1810;
+  font-size: 0.82rem;
+}
+.cd-alerts li.done {
+  border-color: #26313f;
+  background: #111720;
+  color: #97a6b8;
+}
+.cd-alerts button {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid #3d4d66;
+  background: #263349;
+  font-size: 0.78rem;
+}
+/* Banner shown in the conversation when a spend threshold is crossed. */
+.cd-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #6a5424;
+  border-radius: 10px;
+  background: #1c1810;
+  color: #f1dfb5;
+  font-size: 0.82rem;
+}
+.cd-banner strong {
+  font-weight: 600;
+}
+.cd-banner button {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #6a5424;
+  background: transparent;
+  color: inherit;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+/* Per-message and per-conversation cost readouts. */
+.da-message-cost {
+  margin-left: 8px;
+  color: #8397a8;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+.uw-spend-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  height: 36px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #8494ab;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.uw-spend-badge:hover {
+  color: #ecf0f5;
+  background: #1a2330;
+}
+.uw-spend-badge.alerting {
+  color: #f1dfb5;
+}
+@media (max-width: 800px) {
+  .da-message-cost {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+  .uw-spend-badge {
+    padding: 0 4px;
+  }
+}
+/* Billing connections. */
+.cd-billing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px;
+}
+.cd-billing-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid #26313f;
+  border-radius: 12px;
+  background: #111720;
+}
+.cd-billing-card h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #ecf0f5;
+}
+.cd-billing-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: #b8c4d2;
+}
+.cd-billing-card input {
+  padding: 7px 9px;
+  border-radius: 8px;
+  border: 1px solid #344151;
+  background: #0b0f16;
+  color: #ecf0f5;
+  font-size: 0.85rem;
+}
+.cd-billing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.cd-billing-actions button:not(.cd-primary) {
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px solid #344151;
+  background: transparent;
+  color: #b8c4d2;
+  font-size: 0.8rem;
+}

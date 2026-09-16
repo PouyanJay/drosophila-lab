@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 export WEB_PORT TRAINER_PORT SUPABASE_PORT_BASE BACKUP
-.PHONY: help setup run start start-all stop status check-ports logs test test-web test-python test-research lint lint-fix build check check-agents backup restore
+.PHONY: help setup run start start-all stop status check-ports logs test test-web test-python test-research live-cost-check lint lint-fix build check check-agents backup restore
 help:
 	@./scripts/dev.sh help
 setup:
@@ -28,6 +28,8 @@ test-python:
 	@./scripts/dev.sh test-python
 test-research:
 	@./scripts/dev.sh test-research
+live-cost-check:
+	@./scripts/dev.sh live-cost-check
 lint:
 	@./scripts/dev.sh lint
 lint-fix:

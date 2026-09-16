@@ -36,6 +36,7 @@ import {
   Plus,
   Search,
   Settings2,
+  Wallet,
   Square,
   Undo2,
   Waves,
@@ -59,6 +60,9 @@ import AtlasView, { AtlasSettings } from '@/features/atlas/atlas-view';
 import DecisionArena from '@/features/lab/decision-arena';
 import { Message, Plan, defaultPlan, options, tasks } from '@/lib/planning/experiment-planner';
 import ModelPicker, { ModelSelection, ProviderIcon } from '@/features/connections/model-picker';
+import CostDashboard from '@/features/costs/cost-dashboard';
+import { useSpendAlerts } from '@/features/costs/use-spend-alerts';
+import { formatUsd } from '@/lib/contracts/costs';
 import './studio.css';
 import LabPanel, { LabHandle } from '@/features/lab/lab-panel';
 import ComputePicker from '@/features/connections/compute-picker';
@@ -147,6 +151,25 @@ export default function AtlasStudio() {
     [discoveryVariant, setDiscoveryVariant] = useState<any>(null);
   const [sessionId, setSessionId] = useState(''),
     [historyOpen, setHistoryOpen] = useState(false);
+  const [spendOpen, setSpendOpen] = useState(false),
+    [spendVersion, setSpendVersion] = useState(0),
+    [sessionSpend, setSessionSpend] = useState<number | null>(null);
+  const spendAlerts = useSpendAlerts();
+  useEffect(() => {
+    if (!sessionId) return;
+    let active = true;
+    fetch('/api/costs?experiment=' + encodeURIComponent(sessionId))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { totals?: { usd: number; calls: number } } | null) => {
+        if (active) setSessionSpend(d?.totals?.calls ? d.totals.usd : null);
+      })
+      .catch(() => {
+        if (active) setSessionSpend(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [sessionId, spendVersion]);
   useEffect(() => {
     setSessionId(crypto.randomUUID());
   }, []);
@@ -513,6 +536,7 @@ export default function AtlasStudio() {
             text: content,
             config: discoveryConfig,
             campaignId: discoveryId,
+            sessionId,
             provider: modelSelection.provider,
             model: modelSelection.model,
             messages: messages.slice(-40).map((m) => ({ role: m.role, text: m.text })),
@@ -524,8 +548,18 @@ export default function AtlasStudio() {
         setDiscoveryConfig(discoverySchema.parse(reply.config));
         setMessages((m) => [
           ...m,
-          { role: 'assistant', text: reply.text, provider: reply.provider, model: reply.model },
+          {
+            role: 'assistant',
+            text: reply.text,
+            provider: reply.provider,
+            model: reply.model,
+            cost: reply.cost ? (reply.cost.recorded ? reply.cost.usd : 'unrecorded') : undefined,
+          },
         ]);
+        if (reply.cost) {
+          spendAlerts.push(reply.cost.alerts);
+          setSpendVersion((v) => v + 1);
+        }
         return;
       }
       const response = await fetch('/api/guide', {
@@ -538,6 +572,7 @@ export default function AtlasStudio() {
           execution,
           labConfig: labProposal,
           jobContext: labJob,
+          sessionId,
           provider: modelSelection.provider,
           model: modelSelection.model,
           messages: messages.slice(-60),
@@ -560,8 +595,18 @@ export default function AtlasStudio() {
       if (!response.ok) throw Error(reply.error || 'The guide could not respond.');
       setMessages((m) => [
         ...m,
-        { role: 'assistant', text: reply.text, provider: reply.provider, model: reply.model },
+        {
+          role: 'assistant',
+          text: reply.text,
+          provider: reply.provider,
+          model: reply.model,
+          cost: reply.cost ? (reply.cost.recorded ? reply.cost.usd : 'unrecorded') : undefined,
+        },
       ]);
+      if (reply.cost) {
+        spendAlerts.push(reply.cost.alerts);
+        setSpendVersion((v) => v + 1);
+      }
       setPlan(reply.plan);
       setStage(reply.stage);
       setGuideMode(reply.mode);
@@ -768,6 +813,13 @@ export default function AtlasStudio() {
         (evidenceOpen ? ' uw-evidence-open' : '')
       }
     >
+      <CostDashboard
+        open={spendOpen}
+        onClose={() => setSpendOpen(false)}
+        experimentId={hasConversation ? sessionId : null}
+        alerts={spendAlerts.alerts}
+        onAcknowledge={spendAlerts.acknowledge}
+      />
       <SessionHistory
         open={historyOpen}
         onClose={() => setHistoryOpen(false)}
@@ -872,6 +924,25 @@ export default function AtlasStudio() {
                     <MessageCircle size={18} />
                   </button>
                   <button
+                    className={'uw-spend-badge' + (spendAlerts.alerts.length ? ' alerting' : '')}
+                    aria-label={
+                      sessionSpend == null
+                        ? 'Spending and pricing'
+                        : 'Spending and pricing. This experiment has cost ' +
+                          formatUsd(sessionSpend, true) +
+                          ' so far'
+                    }
+                    title={
+                      sessionSpend == null
+                        ? 'Spending and pricing'
+                        : 'This experiment has cost ' + formatUsd(sessionSpend, true) + ' so far'
+                    }
+                    onClick={() => setSpendOpen(true)}
+                  >
+                    <Wallet size={18} />
+                    {sessionSpend != null && <span>{formatUsd(sessionSpend)}</span>}
+                  </button>
+                  <button
                     className="uw-header-button uw-collapse-chat"
                     aria-label="Hide conversation"
                     title="Hide conversation"
@@ -882,6 +953,23 @@ export default function AtlasStudio() {
                 </div>
               </header>
               <div className="de-conversation-content" hidden={welcome && !discoveryMode}>
+                {spendAlerts.alerts.length > 0 && (
+                  <div className="cd-banner" role="alert">
+                    <Wallet size={16} />
+                    <span>
+                      <strong>
+                        Spending passed {formatUsd(spendAlerts.alerts[0].thresholdUsd)}.
+                      </strong>{' '}
+                      Lifetime model spend is {formatUsd(spendAlerts.alerts[0].totalUsd)}.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => spendAlerts.acknowledge(spendAlerts.alerts[0].id)}
+                    >
+                      Acknowledge
+                    </button>
+                  </div>
+                )}
                 <div className="da-chat-thread" hidden={reviewRuns}>
                   {messages
                     .filter((m, i) => i !== 0 || m.role !== 'assistant')
@@ -902,6 +990,24 @@ export default function AtlasStudio() {
                                   : 'Studio guide'}
                               {m.model && m.provider !== 'guided' && (
                                 <small className="da-message-model">{m.model}</small>
+                              )}
+                              {m.cost !== undefined && m.provider !== 'guided' && (
+                                <small
+                                  className="da-message-cost"
+                                  title={
+                                    m.cost === 'unrecorded'
+                                      ? 'This call was billed but could not be saved to the local ledger.'
+                                      : m.cost == null
+                                        ? 'No stored rate for this model. Refresh pricing in Spending.'
+                                        : 'Estimated cost of this reply'
+                                  }
+                                >
+                                  {m.cost === 'unrecorded'
+                                    ? 'not recorded'
+                                    : m.cost == null
+                                      ? 'unpriced'
+                                      : formatUsd(m.cost, true)}
+                                </small>
                               )}
                             </span>
                           )}

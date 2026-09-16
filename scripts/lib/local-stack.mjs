@@ -162,6 +162,27 @@ function trainerNeedsNewNetwork() {
   ]);
   return network.status === 0 && attached.status === 0 && network.stdout !== attached.stdout;
 }
+/** Refresh model prices from the online list when the last good refresh is older than a week. */
+async function refreshPricesIfStale(webUrl) {
+  try {
+    const r = await fetch(webUrl + '/api/costs/prices?ifStale=7', {
+      method: 'POST',
+      headers: { origin: webUrl },
+      signal: AbortSignal.timeout(8000),
+    });
+    const d = await r.json();
+    if (d.skipped) step('Model prices are current');
+    else if (d.refresh?.status === 'succeeded')
+      step(`Refreshed ${d.refresh.modelsUpdated} model prices online`);
+    else step('Model prices not refreshed (offline?); stored prices remain in use');
+  } catch (error) {
+    step(
+      error?.name === 'TimeoutError'
+        ? 'Model price refresh is still running; see Spending > Pricing for the result'
+        : 'Model prices not refreshed (offline?); stored prices remain in use',
+    );
+  }
+}
 export async function startStack() {
   mkdirSync(runtime, { recursive: true });
   const release = await acquireLock(path.join(runtime, 'operation.lock'));
@@ -206,7 +227,7 @@ export async function startStack() {
       LOCAL_WORKSPACE_ID: old.LOCAL_WORKSPACE_ID || randomUUID(),
       DATABASE_URL: status.DB_URL,
       TRAINER_DATABASE_URL: trainerDB.href,
-      LAB_SERVICE_URL: `http://127.0.0.1:${port}`,
+      LAB_SERVICE_URL: `http://localhost:${port}`,
       LAB_TRAINER_PORT: String(port),
       LAB_ALLOW_LOCAL: '1',
       LAB_SERVICE_TOKEN: old.LAB_SERVICE_TOKEN || randomBytes(32).toString('hex'),
@@ -294,6 +315,7 @@ export async function startStack() {
       newChild.unref();
       newChild = null;
     }
+    await refreshPricesIfStale(`http://localhost:${webPort}`);
     section('LAB READY', [
       ['Website', `http://localhost:${webPort}`],
       ['Trainer', values.LAB_SERVICE_URL],

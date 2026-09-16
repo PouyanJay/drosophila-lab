@@ -4,9 +4,12 @@ import {
   type ModelOption,
   type Provider,
 } from '@/lib/contracts/providers';
+import type { TokenUsage } from '@/lib/contracts/costs';
 import 'server-only';
 export class ProviderError extends Error {
   status: number;
+  /** Billed token usage when the provider answered but the reply was unusable. */
+  usage?: TokenUsage;
   constructor(message: string, status = 502) {
     super(message);
     this.status = status;

@@ -7,6 +7,7 @@ import {
   unifiedLabInstructions,
 } from '@/lib/contracts/guide-contract';
 import type { Provider } from '@/lib/contracts/providers';
+import { usageFromResponse } from '@/server/llm-costs';
 import { ProviderError, providerFailure } from '@/server/model-providers';
 import 'server-only';
 export function claudeSchema(schema: any): any {
@@ -130,7 +131,15 @@ export async function callGuide(
   });
   if (!response.ok) throw providerFailure(response.status, provider);
   const body: any = await response.json();
-  const reply = parseGuideReply(provider, body, d.execution);
+  const usage = usageFromResponse(provider, body);
+  let reply;
+  try {
+    reply = parseGuideReply(provider, body, d.execution);
+  } catch (e) {
+    // The provider billed this reply even though it is unusable; let the route record it.
+    if (e instanceof ProviderError) e.usage = usage;
+    throw e;
+  }
   if (
     'action' in reply &&
     'labConfig' in reply &&
@@ -145,6 +154,6 @@ export async function callGuide(
     mode: 'ai',
     provider,
     model: body.model || model,
-    usage: { input: body.usage?.input_tokens, output: body.usage?.output_tokens },
+    usage,
   };
 }

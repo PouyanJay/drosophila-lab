@@ -4,7 +4,8 @@ import { suggestionForPrompt } from '@/lib/planning/experiment-suggestions';
 import { labConversation } from '@/lib/planning/lab-conversation';
 import { getLocalUser } from '@/server/auth/local-user';
 import { callGuide } from '@/server/guide-adapter';
-import { listProviderModels } from '@/server/model-providers';
+import { recordUsageSafely } from '@/server/llm-costs';
+import { listProviderModels, ProviderError } from '@/server/model-providers';
 import { providerCredential } from '@/server/provider-credentials';
 export async function POST(request: Request) {
   if (request.headers.get('origin') !== new URL(request.url).origin)
@@ -54,8 +55,9 @@ export async function POST(request: Request) {
   const user = await getLocalUser();
   if (!user)
     return Response.json({ error: 'Sign in to use your model connections.' }, { status: 401 });
+  let credential: Awaited<ReturnType<typeof providerCredential>> = null;
   try {
-    const credential = await providerCredential(user.userId, d.provider);
+    credential = await providerCredential(user.userId, d.provider);
     if (!credential)
       return Response.json(
         {
@@ -72,10 +74,36 @@ export async function POST(request: Request) {
         },
         { status: 400 },
       );
-    return Response.json(await callGuide(d.provider, d.model, credential.key, d, request.signal), {
-      headers: { 'Cache-Control': 'no-store' },
+    const reply = await callGuide(d.provider, d.model, credential.key, d, request.signal);
+    const cost = await recordUsageSafely({
+      userId: user.userId,
+      provider: d.provider,
+      model: reply.model,
+      credentialSource: credential.source,
+      keyHint: credential.hint,
+      surface: 'guide',
+      experimentId: d.sessionId ?? null,
+      usage: reply.usage,
     });
+    return Response.json(
+      {
+        ...reply,
+        cost: { usd: cost.usd, priced: cost.priced, alerts: cost.alerts, recorded: cost.recorded },
+      },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
   } catch (e: any) {
+    if (e instanceof ProviderError && e.usage && credential)
+      await recordUsageSafely({
+        userId: user.userId,
+        provider: d.provider,
+        model: d.model,
+        credentialSource: credential.source,
+        keyHint: credential.hint,
+        surface: 'guide',
+        experimentId: d.sessionId ?? null,
+        usage: e.usage,
+      });
     return Response.json(
       {
         error: e.status

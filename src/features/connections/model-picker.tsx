@@ -286,7 +286,18 @@ export default function ModelPicker({
                         >
                           <span>
                             {m.name}
-                            <small>{m.id}</small>
+                            <small>
+                              {m.id}
+                              {m.priced === false && (
+                                <em
+                                  className="da-model-unpriced"
+                                  title="No stored rate for this model. Refresh prices in Spending so calls are costed."
+                                >
+                                  {' '}
+                                  · no stored price
+                                </em>
+                              )}
+                            </small>
                           </span>
                           {selection.provider === p.id && selection.model === m.id && (
                             <Check size={16} />

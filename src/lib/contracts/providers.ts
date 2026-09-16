@@ -1,5 +1,6 @@
 export type Provider = 'openai' | 'anthropic';
-export type ModelOption = { id: string; name: string };
+/** `priced` is false when the local pricing table has no rate for the model. */
+export type ModelOption = { id: string; name: string; priced?: boolean };
 export type ProviderStatus = {
   id: Provider;
   name: string;
