@@ -434,3 +434,25 @@
   color: #b8c4d2;
   font-size: 0.8rem;
 }
+.cd-billing-key summary {
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #b8c4d2;
+}
+.cd-billing-key[open] summary {
+  margin-bottom: 8px;
+}
+.cd-billing-key label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: #b8c4d2;
+  margin-bottom: 8px;
+}
+.cd-billing-key .cd-billing-actions {
+  margin-bottom: 8px;
+}
+.cd-billing-card a {
+  color: #9ac6ff;
+}

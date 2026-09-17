@@ -695,51 +695,91 @@ function DashboardBody({ experimentId, experimentName, alerts, onAcknowledge }: 
                             (c.lastSync.error ? ` (${c.lastSync.error})` : '') +
                             '.'
                           : 'Not synced yet.')
-                      : 'Not connected.'}
+                      : provider === 'anthropic'
+                        ? 'Not connected. Anthropic provides cost reports only to Console organization accounts; an individual account cannot create an admin key.'
+                        : 'Not connected.'}
                   </p>
-                  <label>
-                    Admin API key
-                    <input
-                      type="password"
-                      autoComplete="off"
-                      spellCheck={false}
-                      value={billingKeys[provider] ?? ''}
-                      placeholder={provider === 'anthropic' ? 'sk-ant-admin…' : 'sk-admin…'}
-                      onChange={(e) =>
-                        setBillingKeys((k) => ({ ...k, [provider]: e.target.value }))
-                      }
-                      disabled={!!billingBusy}
-                      maxLength={2048}
-                    />
-                  </label>
-                  <div className="cd-billing-actions">
-                    <button
-                      type="submit"
-                      className="cd-primary"
-                      disabled={!!billingBusy || !(billingKeys[provider] ?? '').trim()}
-                    >
-                      {billingBusy === provider
-                        ? 'Verifying…'
-                        : c?.status === 'connected'
-                          ? 'Verify & replace key'
-                          : 'Verify & connect'}
-                    </button>
-                    {c?.status === 'connected' && (
-                      <button
-                        type="button"
+                  {provider === 'anthropic' && c?.status !== 'connected' && (
+                    <p className="cd-note">
+                      Compare the Claude row in Overview with the Console{' '}
+                      <a href="https://platform.claude.com/cost" target="_blank" rel="noreferrer">
+                        Cost page
+                      </a>{' '}
+                      for the same days. For a single-user account the two should match to within
+                      rounding, because both use list prices.
+                    </p>
+                  )}
+                  <details
+                    className="cd-billing-key"
+                    open={provider === 'openai' || c?.status === 'connected'}
+                  >
+                    <summary>
+                      {c?.status === 'connected'
+                        ? 'Manage admin key'
+                        : provider === 'anthropic'
+                          ? 'I have an organization admin key'
+                          : 'Connect an admin key'}
+                    </summary>
+                    <label>
+                      Admin API key
+                      <input
+                        type="password"
+                        autoComplete="new-password"
+                        spellCheck={false}
+                        value={billingKeys[provider] ?? ''}
+                        placeholder={provider === 'anthropic' ? 'sk-ant-admin…' : 'sk-admin…'}
+                        onChange={(e) =>
+                          setBillingKeys((k) => ({ ...k, [provider]: e.target.value }))
+                        }
                         disabled={!!billingBusy}
-                        onClick={() => billingMutate(provider, true)}
+                        maxLength={2048}
+                      />
+                    </label>
+                    <div className="cd-billing-actions">
+                      <button
+                        type="submit"
+                        className="cd-primary"
+                        disabled={!!billingBusy || !(billingKeys[provider] ?? '').trim()}
                       >
-                        Remove key
+                        {billingBusy === provider
+                          ? 'Verifying…'
+                          : c?.status === 'connected'
+                            ? 'Verify & replace key'
+                            : 'Verify & connect'}
                       </button>
-                    )}
-                  </div>
-                  <small className="cd-note">
-                    Encrypted on the server, used only to read cost reports, never for model calls.
-                    {provider === 'anthropic'
-                      ? ' Created at Console › Settings › Admin keys, which only exists for organization accounts; an individual account gets "Page not found" there and cannot use cost reports.'
-                      : ' Created at OpenAI › Organization settings › Admin keys by an organization owner.'}
-                  </small>
+                      {c?.status === 'connected' && (
+                        <button
+                          type="button"
+                          disabled={!!billingBusy}
+                          onClick={() => billingMutate(provider, true)}
+                        >
+                          Remove key
+                        </button>
+                      )}
+                    </div>
+                    <small className="cd-note">
+                      Encrypted on the server, used only to read cost reports, never for model
+                      calls.{' '}
+                      {provider === 'anthropic' ? (
+                        <>
+                          Created at Console › Settings › Admin keys, which exists only for
+                          organization accounts.
+                        </>
+                      ) : (
+                        <>
+                          Created by an organization owner at{' '}
+                          <a
+                            href="https://platform.openai.com/settings/organization/admin-keys"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            OpenAI › Organization › Admin keys
+                          </a>
+                          .
+                        </>
+                      )}
+                    </small>
+                  </details>
                 </form>
               );
             })}
