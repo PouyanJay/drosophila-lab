@@ -59,9 +59,6 @@
     "@typescript-eslint/no-explicit-any": {
       "count": 13
     },
-    "react-hooks/refs": {
-      "count": 3
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }

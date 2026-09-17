@@ -8,3 +8,12 @@ Derived data in this directory retain original MaleCNS body IDs and measured edg
 Anatomical meshes originate from the public fullbrain-roi-v5 and vnc-neuropil-shell-v2 segmentations. Display meshes are simplified via quadric edge collapse, with per-fragment original and display checksums in meshes.json. SWC centerline skeletons are converted to line-segment buffers. Soma/root annotations and skeletons are converted from 8 nm voxel units to micrometres. Mesh positions convert from nanometres to micrometres. All share the viewing transform (x, -z, y).
 
 Rendering sample and connectivity extracts are not the entire nervous system. Computational neuron dynamics and stimulus/response interfaces are modeling assumptions, not measurements supplied by the connectome.
+
+atlas-v1 is a separate display-only representative sample (768 source neurons).
+It preserves source SWC radius estimates, body IDs and per-source SHA-256 hashes.
+Degree-two chains are simplified with 1 µm positional and 0.25 µm radius tolerance;
+branch points and chain endpoints are retained. Manifest and chunk checksums define
+this display release. Rounded tubes are a rendering of skeleton radius estimates,
+not original membrane segmentation meshes. The viewer applies a 0.12 µm minimum
+display radius and optional thickness scaling for readability. This does not alter
+the computational graph, biological coordinates or stored source radius values.

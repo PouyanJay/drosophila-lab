@@ -501,12 +501,14 @@ export default function AtlasStudio() {
     change({
       selectedRegion: null,
       selectedBody: String(a[0]),
+      isolateNeuron: false,
       selectedPoint: a.slice(7, 10),
       group: -1,
       isolate: false,
       inventory: false,
       explode: 0,
-      scope: a[6] === 3 ? 'cns' : 'brain',
+      scope:
+        a[6] === 3 || ['descending_neuron', 'ascending_neuron'].includes(a[3]) ? 'cns' : 'brain',
     });
     setDialog('');
     setMode('atlas');
@@ -1378,6 +1380,10 @@ export default function AtlasStudio() {
                 <AtlasView
                   settings={atlasSettings}
                   onPick={selectRegion}
+                  onNeuronPick={(bodyId) => {
+                    const neuron = catalog.find((row) => String(row[0]) === bodyId);
+                    if (neuron) selectNeuron(neuron);
+                  }}
                   onReady={setReady}
                   onRenderer={setRenderer}
                 />
@@ -1462,7 +1468,7 @@ export default function AtlasStudio() {
                     title="Reset view"
                     aria-label="Reset view"
                     onClick={() => {
-                      setSettings(initialSettings);
+                      setSettings({ ...initialSettings, resetKey: (settings.resetKey ?? 0) + 1 });
                       setSelected(null);
                     }}
                   >
@@ -1497,6 +1503,7 @@ export default function AtlasStudio() {
                         change({
                           selectedRegion: null,
                           selectedBody: null,
+                          isolateNeuron: false,
                           selectedPoint: null,
                           isolate: false,
                         });
@@ -1551,8 +1558,23 @@ export default function AtlasStudio() {
                       Discuss this selection
                     </button>
                     {selected.kind === 'neuron' && (
+                      <div className="da-inspect-actions">
+                        <button
+                          disabled={renderer === '2d'}
+                          onClick={() => change({ isolateNeuron: !settings.isolateNeuron })}
+                        >
+                          <Focus size={15} />
+                          {settings.isolateNeuron ? 'Show context' : 'Isolate neuron'}
+                        </button>
+                      </div>
+                    )}
+                    {selected.kind === 'neuron' && (
                       <a
-                        href={'/api/morphology?id=' + selected.data[0]}
+                        href={
+                          'https://storage.googleapis.com/flyem-male-cns/v1.0/segmentation/skeletons-malecns/skeletons-swc/' +
+                          selected.data[0] +
+                          '.swc'
+                        }
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -2235,7 +2257,7 @@ export default function AtlasStudio() {
               </label>
               {[
                 ['surfaces', 'Neuropil surfaces'],
-                ['fibers', 'Source skeletons'],
+                ['fibers', 'Neuron morphology'],
                 ['somas', 'Neuron positions'],
                 ['labels', 'Inventory labels'],
               ].map(([key, label]) => (
@@ -2248,6 +2270,29 @@ export default function AtlasStudio() {
                   />
                 </label>
               ))}
+              <label>
+                Depth shading
+                <Switch
+                  disabled={renderer === '2d'}
+                  checked={settings.depthShading !== false}
+                  onCheckedChange={(v) => change({ depthShading: v })}
+                />
+              </label>
+              <label>
+                Branch thickness <span>{(settings.branchScale ?? 1).toFixed(1)}×</span>
+              </label>
+              <Slider
+                aria-label="Branch thickness"
+                disabled={renderer === '2d'}
+                value={[settings.branchScale ?? 1]}
+                min={0.5}
+                max={2}
+                step={0.1}
+                onValueChange={(v) => change({ branchScale: v[0] })}
+              />
+              <p>
+                Thickness scales source radius estimates for display. It does not change the brain.
+              </p>
               <label>
                 Surface opacity <span>{settings.opacity}%</span>
               </label>

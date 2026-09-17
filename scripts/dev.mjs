@@ -19,6 +19,7 @@ export const webTests = [
   ['Research/browser checks', npm, ['run', 'test:research']],
 ];
 const pythonTests = [
+  ['Atlas display geometry', ...uv('python', '-m', 'unittest', 'scripts.data.test_atlas_geometry')],
   [
     'Python trainer/discovery',
     ...uv('python', '-m', 'unittest', 'research.lab.test_lab', 'research.lab.test_discovery'),

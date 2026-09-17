@@ -2588,3 +2588,44 @@ h3 {
   --input: #3b4351;
   --ring: #b4c4df;
 }
+
+/* Source morphology status remains inside the atlas, clear of its primary controls. */
+.atlas-morphology-status {
+  position: absolute;
+  left: 22px;
+  top: 82px;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 6px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 8px;
+  max-width: calc(100% - 44px);
+  pointer-events: none;
+  padding: 9px 12px;
+  border: 1px solid #aacfff16;
+  border-radius: 10px;
+  background: #0b111bcc;
+  color: #c8d6e5;
+  font-size: 11px;
+  backdrop-filter: blur(12px);
+}
+.atlas-morphology-status small {
+  grid-column: 2;
+  color: #8393a8;
+  font-size: 10px;
+}
+.atlas-morphology-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #aacfff;
+}
+@media (max-width: 640px) {
+  .uw-studio .atlas-morphology-status {
+    top: 190px;
+  }
+  .atlas-morphology-status {
+    left: 12px;
+    max-width: calc(100% - 24px);
+  }
+}
