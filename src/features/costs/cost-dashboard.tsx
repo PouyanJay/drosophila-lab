@@ -736,6 +736,9 @@ function DashboardBody({ experimentId, experimentName, alerts, onAcknowledge }: 
                   </div>
                   <small className="cd-note">
                     Encrypted on the server, used only to read cost reports, never for model calls.
+                    {provider === 'anthropic'
+                      ? ' Created at Console › Settings › Admin keys, which only exists for organization accounts; an individual account gets "Page not found" there and cannot use cost reports.'
+                      : ' Created at OpenAI › Organization settings › Admin keys by an organization owner.'}
                   </small>
                 </form>
               );
