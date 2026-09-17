@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { cellColor, normalizedClass } from './atlas-appearance';
 import { decodeMorphology, parseMorphologyManifest, type MorphologyCell } from './atlas-morphology';
 import { createTubeChunk, type TubeMesh } from './atlas-tubes';
 import { neuralLayerAlpha, neuralLayerVisible } from './atlas-render-state';
@@ -87,11 +88,19 @@ export class MorphologyLayer {
     this.hoverId = bodyId ? (this.identities.get(bodyId) ?? 0) : 0;
   }
 
-  update(settings: AtlasSettings) {
+  update(settings: AtlasSettings, focusDistance = 1200, membraneBody = '') {
     const alpha = neuralLayerAlpha(settings.inventory, settings.explode);
     for (const [index, mesh] of this.meshes.entries()) {
       mesh.visible =
         !(settings.isolateNeuron && !this.has(settings.selectedBody ?? '')) &&
+        (!settings.isolateNeuron ||
+          (mesh.userData.cells as MorphologyCell[]).some(
+            (cell) => cell.bodyId === settings.selectedBody,
+          )) &&
+        (!settings.focusType ||
+          (mesh.userData.cells as MorphologyCell[]).some(
+            (cell) => cell.type === settings.focusType,
+          )) &&
         alpha > 0 &&
         neuralLayerVisible(
           settings.fibers,
@@ -100,9 +109,39 @@ export class MorphologyLayer {
           settings.group,
           mesh.userData.group,
         );
+      const appearanceKey = JSON.stringify([
+        settings.colorMode,
+        settings.theme,
+        settings.hiddenClasses,
+        settings.focusType,
+      ]);
+      if (mesh.userData.appearanceKey !== appearanceKey) {
+        const colors = mesh.geometry.getAttribute('cellColor') as THREE.InstancedBufferAttribute;
+        const visible = mesh.geometry.getAttribute('cellVisible') as THREE.InstancedBufferAttribute;
+        for (const cell of mesh.userData.cells as MorphologyCell[]) {
+          const color = new THREE.Color(
+            cellColor(cell, settings.colorMode ?? 'class', settings.theme ?? 'dark'),
+          );
+          const show =
+            !settings.hiddenClasses?.includes(normalizedClass(cell.cellClass)) &&
+            (!settings.focusType || cell.type === settings.focusType);
+          for (let j = cell.offset; j < cell.offset + cell.segments; j++) {
+            colors.setXYZ(j, color.r, color.g, color.b);
+            visible.setX(j, show ? 1 : 0);
+          }
+        }
+        colors.needsUpdate = visible.needsUpdate = true;
+        mesh.userData.appearanceKey = appearanceKey;
+      }
+      mesh.material.uniforms.replacedId.value = this.identities.get(membraneBody) ?? 0;
+      mesh.material.uniforms.focusDistance.value = focusDistance;
+      mesh.material.uniforms.lightTheme.value = settings.theme === 'light';
+      mesh.material.uniforms.depthCue.value = settings.depthCue !== false;
+      mesh.material.uniforms.contextBrightness.value = settings.contextBrightness ?? 0.12;
       mesh.material.uniforms.fade.value = alpha;
-      mesh.material.uniforms.selectedId.value =
-        this.identities.get(settings.selectedBody ?? '') ?? 0;
+      mesh.material.uniforms.selectedId.value = settings.focusType
+        ? 0
+        : (this.identities.get(settings.selectedBody ?? '') ?? 0);
       mesh.material.uniforms.hoveredId.value = this.hoverId;
       mesh.material.uniforms.isolateSelected.value = !!settings.isolateNeuron;
       mesh.material.uniforms.radiusScale.value = settings.branchScale ?? 1;
@@ -133,7 +172,19 @@ export class MorphologyLayer {
         object.material instanceof THREE.MeshPhysicalMaterial &&
         object.material.opacity >= 0.95
       ) {
-        const occluder = new THREE.Mesh(object.geometry, this.occluderMaterial);
+        const identity = this.identities.get(object.userData.bodyId) ?? 0;
+        const material = identity
+          ? new THREE.MeshBasicMaterial({
+              color: new THREE.Color(
+                (identity & 255) / 255,
+                ((identity >> 8) & 255) / 255,
+                ((identity >> 16) & 255) / 255,
+              ),
+              side: THREE.DoubleSide,
+              toneMapped: false,
+            })
+          : this.occluderMaterial;
+        const occluder = new THREE.Mesh(object.geometry, material);
         occluder.matrixAutoUpdate = false;
         occluder.matrix.copy(object.matrixWorld);
         this.pickScene.add(occluder);
@@ -152,6 +203,9 @@ export class MorphologyLayer {
       return this.cells.get(this.pixels[0] + this.pixels[1] * 256 + this.pixels[2] * 65536);
     } finally {
       this.pickScene.remove(...occluders);
+      for (const occluder of occluders)
+        if (occluder.material !== this.occluderMaterial)
+          (occluder.material as THREE.Material).dispose();
       camera.clearViewOffset();
       for (const mesh of this.meshes) mesh.material.uniforms.picking.value = false;
       renderer.setRenderTarget(target);

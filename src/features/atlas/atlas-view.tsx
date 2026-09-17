@@ -2,8 +2,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { MorphologyLayer, type MorphologyProgress } from './atlas-morphology-layer';
+import { loadMembrane, membraneGallery } from './atlas-membrane';
+import { cellColor, normalizedClass } from './atlas-appearance';
 import { AtlasEffects } from './atlas-effects';
 import AtlasFallback from '@/features/atlas/atlas-fallback';
+import { AtlasCameraFlight } from './atlas-camera-flight';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {
   cutawayPlaneConstant,
@@ -11,6 +14,17 @@ import {
   neuralLayerVisible,
 } from '@/features/atlas/atlas-render-state';
 export type AtlasSettings = {
+  theme?: 'dark' | 'light';
+  snapshotKey?: number;
+  colorMode?: import('./atlas-appearance').ColorMode;
+  focusType?: string;
+  hiddenClasses?: string[];
+  contextBrightness?: number;
+  autoRotate?: boolean;
+  outlines?: boolean;
+  destination?: 'brain' | 'cns' | 'cord' | 'neck';
+  ghostContext?: boolean;
+  depthCue?: boolean;
   depthShading?: boolean;
   branchScale?: number;
   isolateNeuron?: boolean;
@@ -65,6 +79,7 @@ export default function AtlasView({
     pick = useRef(onPick),
     neuronPick = useRef(onNeuronPick),
     [morphology, setMorphology] = useState<MorphologyProgress | null>(null),
+    [membraneStatus, setMembraneStatus] = useState<{ bodyId: string; text: string } | null>(null),
     [hovered, setHovered] = useState<string | null>(null),
     ready = useRef(onReady),
     [error, setError] = useState(''),
@@ -114,6 +129,12 @@ export default function AtlasView({
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(385, -210, 185);
     controls.enableDamping = true;
+    controls.autoRotateSpeed = 0.4;
+    let orbitPaused = false;
+    let lastOrbit = false;
+    controls.addEventListener('start', () => {
+      orbitPaused = true;
+    });
     controls.dampingFactor = 0.08;
     controls.minDistance = 100;
     controls.maxDistance = 12000;
@@ -128,6 +149,43 @@ export default function AtlasView({
     const root = new THREE.Group();
     scene.add(root);
     const morphologyLayer = new MorphologyLayer(root);
+    const membrane = new THREE.Mesh(
+      new THREE.BufferGeometry(),
+      new THREE.MeshPhysicalMaterial({ roughness: 0.65, metalness: 0, color: '#4779ef' }),
+    );
+    membrane.visible = false;
+    root.add(membrane);
+    let membraneRequest: AbortController | null = null;
+    let membraneBody = '';
+    let requestedBody = '';
+    const requestMembrane = (bodyId: string) => {
+      membraneRequest?.abort();
+      membraneBody = '';
+      membrane.visible = false;
+      membrane.geometry.dispose();
+      membrane.geometry = new THREE.BufferGeometry();
+      setMembraneStatus(null);
+      if (!membraneGallery.some((cell) => cell.bodyId === bodyId)) return;
+      const controller = new AbortController();
+      membraneRequest = controller;
+      setMembraneStatus({ bodyId, text: 'Loading source membrane…' });
+      loadMembrane(bodyId, controller.signal)
+        .then((geometry) => {
+          if (controller.signal.aborted || !geometry) {
+            geometry?.dispose();
+            return;
+          }
+          membrane.geometry.dispose();
+          membrane.geometry = geometry;
+          membraneBody = bodyId;
+          membrane.userData.bodyId = bodyId;
+          setMembraneStatus({ bodyId, text: 'Source membrane · LOD 2' });
+        })
+        .catch(() => {
+          if (!controller.signal.aborted)
+            setMembraneStatus({ bodyId, text: 'Membrane unavailable · showing source skeleton' });
+        });
+    };
     const effects = renderer.extensions.has('EXT_color_buffer_float')
       ? new AtlasEffects(renderer, scene, camera)
       : null;
@@ -148,9 +206,14 @@ export default function AtlasView({
       }
     };
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const flight = new AtlasCameraFlight();
+    let flightTarget: THREE.Vector3 | null = null;
+    let hasFramed = false;
+    let previousFrame = performance.now();
     let focusTarget: THREE.Vector3 | null = null;
     let focusPosition: THREE.Vector3 | null = null;
     controls.addEventListener('start', () => {
+      flight.cancel();
       focusTarget = null;
       focusPosition = null;
     });
@@ -240,20 +303,42 @@ export default function AtlasView({
         }
       },
       fit: (scope: string, view: string, preserve = false) => {
+        const oldPosition = camera.position.clone(),
+          oldTarget = controls.target.clone();
+        flight.cancel();
         const direction = camera.position.clone().sub(controls.target),
           zoom = lastFitDistance ? direction.length() / lastFitDistance : 1;
         const chosenMesh = meshes.find((m) => m.userData.id === state.current.selectedRegion);
+        const destination =
+          scope === 'cns' &&
+          !state.current.isolate &&
+          !state.current.inventory &&
+          state.current.group < 0
+            ? state.current.destination
+            : undefined;
+        const chosenCell = morphologyLayer.cell(state.current.selectedBody ?? '');
+        const cellBounds = chosenCell
+          ? new THREE.Box3(
+              new THREE.Vector3(...chosenCell.bounds[0]),
+              new THREE.Vector3(...chosenCell.bounds[1]),
+            )
+          : null;
+        const cellExtent = cellBounds?.getSize(new THREE.Vector3());
         const target = preserve
           ? controls.target.clone()
-          : state.current.isolate && chosenMesh
-            ? chosenMesh.userData.center.clone()
-            : state.current.inventory
-              ? new THREE.Vector3(385, -210, 185)
-              : scope === 'cns'
-                ? new THREE.Vector3(385, -470, 210)
-                : new THREE.Vector3(385, -210, 185);
+          : cellBounds
+            ? cellBounds.getCenter(new THREE.Vector3())
+            : state.current.isolate && chosenMesh
+              ? chosenMesh.userData.center.clone()
+              : state.current.inventory
+                ? new THREE.Vector3(385, -210, 185)
+                : scope === 'cns'
+                  ? new THREE.Vector3(385, -470, 210)
+                  : new THREE.Vector3(385, -210, 185);
         focusTarget = null;
         focusPosition = null;
+        if (!preserve && destination === 'cord') target.set(385, -765, 210);
+        if (!preserve && destination === 'neck') target.set(385, -440, 210);
         controls.target.copy(target);
         const count = new Set(
           meshes
@@ -271,18 +356,30 @@ export default function AtlasView({
           ),
           rows = Math.ceil(count / cols);
         const isolatedSize = chosenMesh?.userData.size || 300;
-        const height = state.current.isolate
-            ? isolatedSize
-            : state.current.inventory
-              ? rows * 140 + 150
-              : scope === 'cns'
-                ? 1000
-                : 420,
-          width = state.current.isolate
-            ? isolatedSize
-            : state.current.inventory
-              ? cols * 150 + 100
-              : 740;
+        const height = cellExtent
+            ? Math.max(cellExtent.y, cellExtent.z) * 1.1
+            : state.current.isolate
+              ? isolatedSize
+              : state.current.inventory
+                ? rows * 140 + 150
+                : destination === 'cord'
+                  ? 750
+                  : destination === 'neck'
+                    ? 260
+                    : scope === 'cns'
+                      ? 1000
+                      : 420,
+          width = cellExtent
+            ? Math.max(cellExtent.x, cellExtent.z) * 1.1
+            : state.current.isolate
+              ? isolatedSize
+              : state.current.inventory
+                ? cols * 150 + 100
+                : destination === 'cord'
+                  ? 430
+                  : destination === 'neck'
+                    ? 360
+                    : 740;
         const framing = state.current.inventory || state.current.isolate ? 0.84 : 0.83;
         const distance =
           Math.max(height, width / camera.aspect) / (2 * Math.tan((16 * Math.PI) / 180) * framing);
@@ -302,9 +399,17 @@ export default function AtlasView({
           );
         lastFitDistance = distance;
         camera.up.set(0, 1, 0);
+        if (hasFramed && !preserve && !reducedMotion.matches) {
+          focusTarget = controls.target.clone();
+          focusPosition = camera.position.clone();
+          controls.target.copy(oldTarget);
+          camera.position.copy(oldPosition);
+        }
+        hasFramed = true;
         controls.update();
       },
       cancelFocus: () => {
+        flight.cancel();
         focusTarget = null;
         focusPosition = null;
       },
@@ -381,6 +486,23 @@ export default function AtlasView({
                 depthWrite: false,
                 clearcoat: 0.3,
               });
+              const shellUniform = { value: false };
+              material.userData.shellUniform = shellUniform;
+              material.onBeforeCompile = (shader) => {
+                shader.uniforms.quietShell = shellUniform;
+                shader.fragmentShader = 'uniform bool quietShell;\n' + shader.fragmentShader;
+                shader.fragmentShader = shader.fragmentShader.replace(
+                  '#include <opaque_fragment>',
+                  `
+                  if (quietShell) {
+                    float rim = pow(1.0 - abs(dot(normal, normalize(vViewPosition))), 2.0);
+                    diffuseColor.a *= 0.08 + 0.92 * rim;
+                    outgoingLight = diffuseColor.rgb;
+                  }
+                  #include <opaque_fragment>
+                `,
+                );
+              };
               const mesh = new THREE.Mesh(geometry, material);
               mesh.userData = {
                 ...region,
@@ -492,14 +614,47 @@ export default function AtlasView({
       }
     };
     load();
+    let capturedSnapshot = state.current.snapshotKey ?? 0;
     const draw = () => {
       if (!el.clientWidth || !el.clientHeight) {
         raf = requestAnimationFrame(draw);
         return;
       }
       const s = state.current;
-      morphologyLayer.update(s);
+      const lightTheme = s.theme === 'light';
+      renderer.setClearColor(lightTheme ? 0xffffff : 0x0b1017, 0);
+      if ((s.selectedBody ?? '') !== requestedBody) {
+        requestedBody = s.selectedBody ?? '';
+        requestMembrane(requestedBody);
+      }
+      const membraneCell = morphologyLayer.cell(membraneBody);
+      membrane.visible =
+        !!membraneCell &&
+        membraneBody === s.selectedBody &&
+        !s.inventory &&
+        !s.isolate &&
+        s.fibers &&
+        (s.scope === 'cns' || membraneCell.group !== 3) &&
+        (s.group < 0 || s.group === membraneCell.group) &&
+        !s.hiddenClasses?.includes(normalizedClass(membraneCell.cellClass)) &&
+        (!s.focusType || s.focusType === membraneCell.type);
+      if (membraneCell)
+        membrane.material.color.set(
+          cellColor(membraneCell, s.colorMode ?? 'cell', s.theme ?? 'dark'),
+        );
+      morphologyLayer.update(
+        s,
+        camera.position.distanceTo(controls.target),
+        membrane.visible ? membraneBody : '',
+      );
       controls.enabled = s.interactive !== false;
+      if (!!s.autoRotate !== lastOrbit) {
+        orbitPaused = false;
+        lastOrbit = !!s.autoRotate;
+      }
+      controls.autoRotate =
+        !!s.autoRotate && !orbitPaused && !reducedMotion.matches && !focusTarget;
+
       renderer.domElement.style.touchAction = controls.enabled ? 'none' : 'pan-y';
       clip.constant = s.inventory ? 20000 : s.scope === 'brain' ? 450 : 2000;
       cut.constant = cutawayPlaneConstant(s.slice);
@@ -524,14 +679,31 @@ export default function AtlasView({
         const g = mesh.userData.group,
           selected = s.selectedRegion === mesh.userData.id;
         mesh.visible =
-          s.surfaces &&
-          !s.isolateNeuron &&
-          s.opacity > 0 &&
+          (s.surfaces || !!s.outlines || !!s.ghostContext) &&
+          (!s.isolateNeuron || !!s.ghostContext) &&
+          (s.opacity > 0 || !!s.outlines || !!s.ghostContext) &&
           (s.scope === 'cns' || g !== 3) &&
           (s.group < 0 || g === s.group) &&
           !(s.hidden || []).includes(mesh.userData.id) &&
           (!s.isolate || selected);
-        mesh.material.opacity = s.opacity / 100;
+        mesh.material.wireframe = !!s.outlines;
+        const ghost = !!s.ghostContext && !s.inventory && !s.isolate;
+        mesh.material.userData.shellUniform.value = ghost;
+        if (ghost) mesh.material.color.set(lightTheme ? '#525965' : '#a4b6cc');
+        else mesh.material.color.copy(mesh.userData.baseColor);
+        mesh.material.roughness = ghost ? 0.85 : 0.3;
+        mesh.material.metalness = ghost ? 0 : 0.24;
+        mesh.material.clearcoat = ghost ? 0 : 0.3;
+        mesh.material.specularIntensity = ghost ? 0.08 : 1;
+        mesh.material.opacity = s.outlines
+          ? lightTheme
+            ? 0.08
+            : 0.12
+          : ghost
+            ? lightTheme
+              ? 0.12
+              : 0.035
+            : s.opacity / 100;
         mesh.material.emissive.set(selected ? 0x394a60 : 0x000000);
         const e = s.explode / 100;
         if (s.inventory) {
@@ -588,16 +760,22 @@ export default function AtlasView({
           !morphologyLayer.has(s.selectedBody || '');
         (highlight.material as THREE.LineBasicMaterial).opacity = neuralAlpha;
       }
+      const now = performance.now();
+      const delta = Math.min((now - previousFrame) / 1000, 0.1);
+      previousFrame = now;
       if (focusTarget && focusPosition) {
-        const amount = reducedMotion.matches ? 1 : 0.12;
-        controls.target.lerp(focusTarget, amount);
-        camera.position.lerp(focusPosition, amount);
-        if (camera.position.distanceTo(focusPosition) < 0.1) {
+        if (flightTarget !== focusTarget) {
+          flight.start(camera.position, controls.target, focusPosition, focusTarget, now);
+          flightTarget = focusTarget;
+        }
+        flight.update(now, camera.position, controls.target, reducedMotion.matches);
+        if (!flight.active) {
           focusTarget = null;
           focusPosition = null;
+          flightTarget = null;
         }
       }
-      controls.update();
+      controls.update(delta);
       if (el.clientWidth && el.clientHeight) {
         const w = el.clientWidth,
           h = el.clientHeight;
@@ -638,12 +816,48 @@ export default function AtlasView({
             renderer.setScissorTest(true);
             renderer.setScissor(w - sw - 16, 16 + j * (sh + 12), sw, sh);
             renderer.setViewport(w - sw - 16, 16 + j * (sh + 12), sw, sh);
-            renderer.setClearColor(0x000000, 1);
+            renderer.setClearColor(lightTheme ? 0xffffff : 0x0b1017, 1);
             renderer.clear();
             renderer.render(scene, cam);
           }
           renderer.setScissorTest(false);
-          renderer.setClearColor(0x000000, 0);
+          renderer.setClearColor(lightTheme ? 0xffffff : 0x0b1017, 0);
+        }
+      }
+      if ((s.snapshotKey ?? 0) < capturedSnapshot) capturedSnapshot = s.snapshotKey ?? 0;
+      if ((s.snapshotKey ?? 0) > capturedSnapshot) {
+        capturedSnapshot = s.snapshotKey ?? 0;
+        const canvas = document.createElement('canvas');
+        canvas.width = renderer.domElement.width;
+        canvas.height = renderer.domElement.height + 64;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = lightTheme ? '#ffffff' : '#0b1017';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(renderer.domElement, 0, 0);
+          ctx.fillStyle = lightTheme ? '#334155' : '#d4e3f4';
+          ctx.font = '14px sans-serif';
+          ctx.fillText(
+            membrane.visible
+              ? `MaleCNS v1.0 · source membrane ${membraneBody} · LOD 2 · CC BY 4.0`
+              : 'MaleCNS v1.0 · representative source SWC anatomy · CC BY 4.0',
+            20,
+            canvas.height - 38,
+          );
+          ctx.fillText(
+            `Color: ${s.colorMode ?? 'class'} · radius display: ${s.branchScale ?? 1}× · filters: ${s.hiddenClasses?.length ?? 0} classes hidden`,
+            20,
+            canvas.height - 16,
+          );
+          canvas.toBlob((blob) => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'malecns-atlas.png';
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+          });
         }
       }
       raf = requestAnimationFrame(draw);
@@ -727,6 +941,9 @@ export default function AtlasView({
       cancelAnimationFrame(raf);
       observer.disconnect();
       controls.dispose();
+      membraneRequest?.abort();
+      membrane.geometry.dispose();
+      membrane.material.dispose();
       morphologyLayer.dispose();
       effects?.dispose();
       renderer.domElement.removeEventListener('pointermove', move);
@@ -759,6 +976,10 @@ export default function AtlasView({
     api.current?.setAncestors(settings.ancestors || []);
   }, [settings.ancestors]);
   useEffect(() => {
+    if (settings.selectedBody) api.current?.highlightBody(settings.selectedBody);
+    else api.current?.cancelFocus();
+  }, [settings.selectedBody]);
+  useEffect(() => {
     api.current?.fit(settings.scope, settings.view);
   }, [
     settings.scope,
@@ -768,11 +989,8 @@ export default function AtlasView({
     settings.hidden,
     settings.isolate,
     settings.resetKey,
+    settings.destination,
   ]);
-  useEffect(() => {
-    if (settings.selectedBody) api.current?.highlightBody(settings.selectedBody);
-    else api.current?.cancelFocus();
-  }, [settings.selectedBody]);
   return (
     <div
       className="atlas-canvas"
@@ -790,11 +1008,12 @@ export default function AtlasView({
             {hovered ||
               `${morphology.loaded.toLocaleString()}${morphology.done ? '' : ` / ${morphology.total.toLocaleString()}`} source neurons`}
           </span>
+          {membraneStatus?.bodyId === settings.selectedBody && <small>{membraneStatus.text}</small>}
           <small>
             {morphology.failed
               ? `Partial anatomy · ${morphology.failed} unavailable`
               : morphology.done
-                ? 'Representative anatomy · source radius estimates'
+                ? `Representative anatomy · ${settings.colorMode ?? 'class'} colors${settings.hiddenClasses?.length ? ' · filtered' : ''}`
                 : 'Loading detailed anatomy…'}
           </small>
         </div>

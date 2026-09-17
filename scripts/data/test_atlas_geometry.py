@@ -81,6 +81,8 @@ class AtlasGeometryTests(unittest.TestCase):
                 self.assertEqual(cell["offset"], offset)
                 self.assertEqual(cell["type"], catalog[cell["bodyId"]][1])
                 self.assertEqual(cell["group"], catalog[cell["bodyId"]][6])
+                for field, column in [("cellClass", 3), ("side", 4), ("neurotransmitter", 5)]:
+                    self.assertEqual(cell[field], catalog[cell["bodyId"]][column])
                 for i in range(offset * 8, (offset + cell["segments"]) * 8, 4):
                     for k in range(3):
                         self.assertGreaterEqual(floats[i + k], cell["bounds"][0][k] - 0.001)

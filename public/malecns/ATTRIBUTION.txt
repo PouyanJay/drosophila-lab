@@ -9,7 +9,7 @@ Anatomical meshes originate from the public fullbrain-roi-v5 and vnc-neuropil-sh
 
 Rendering sample and connectivity extracts are not the entire nervous system. Computational neuron dynamics and stimulus/response interfaces are modeling assumptions, not measurements supplied by the connectome.
 
-atlas-v1 is a separate display-only representative sample (768 source neurons).
+atlas-v1 is a separate display-only representative sample (2,048 source neurons).
 It preserves source SWC radius estimates, body IDs and per-source SHA-256 hashes.
 Degree-two chains are simplified with 1 µm positional and 0.25 µm radius tolerance;
 branch points and chain endpoints are retained. Manifest and chunk checksums define
@@ -17,3 +17,11 @@ this display release. Rounded tubes are a rendering of skeleton radius estimates
 not original membrane segmentation meshes. The viewer applies a 0.12 µm minimum
 display radius and optional thickness scaling for readability. This does not alter
 the computational graph, biological coordinates or stored source radius values.
+
+membranes-v1 contains three authentic MaleCNS segmentation surface reconstructions
+from https://storage.googleapis.com/flyem-male-cns/v1.0/segmentation/multi-res-meshes
+at level of detail 2, decoded with cloud-volume 12.14.4. These are source membrane
+meshes, not SWC-derived approximations. Coordinates convert nanometres to micrometres
+and apply (x, -z, y). Body IDs, triangle counts, bounds and asset SHA-256 hashes are
+recorded in membranes-v1/manifest.json, with the canonical source mesh metadata hash.
+The same FlyEM collaboration attribution and CC BY 4.0 license above apply.

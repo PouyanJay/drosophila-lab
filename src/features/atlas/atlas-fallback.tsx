@@ -71,7 +71,10 @@ export default function AtlasFallback({ settings }: { settings: AtlasSettings })
       ox = left + (w - left - right - (x1 - x0) * scale) / 2,
       oy = top + (h - top - bottom - (y1 - y0) * scale) / 2;
     const px = (p: number[]) => [ox + (p[ax] - x0) * scale, oy + (y1 - p[ay]) * scale];
-    const colors = ['#70b8cc', '#a4a4da', '#d9c291', '#89b99b'];
+    const colors =
+      settings.theme === 'light'
+        ? ['#08778f', '#7255b2', '#93651b', '#297750']
+        : ['#70b8cc', '#a4a4da', '#d9c291', '#89b99b'];
     for (let pane = 0; pane < (settings.comparison ? 2 : 1); pane++) {
       ctx.save();
       ctx.translate(pane * w, 0);
@@ -96,7 +99,7 @@ export default function AtlasFallback({ settings }: { settings: AtlasSettings })
       }
       if (settings.selectedPoint) {
         const [x, y] = px(settings.selectedPoint);
-        ctx.strokeStyle = '#f8e6b7';
+        ctx.strokeStyle = settings.theme === 'light' ? '#9b5200' : '#f8e6b7';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(x, y, 6, 0, Math.PI * 2);
@@ -107,6 +110,7 @@ export default function AtlasFallback({ settings }: { settings: AtlasSettings })
   }, [
     points,
     size,
+    settings.theme,
     settings.view,
     settings.scope,
     settings.group,

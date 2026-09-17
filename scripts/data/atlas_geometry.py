@@ -144,6 +144,9 @@ def prepare_cell(row, cache, tolerance):
     return dict(
         bodyId=body,
         type=row[1],
+        cellClass=row[3],
+        side=row[4],
+        neurotransmitter=row[5],
         group=row[6],
         source=SOURCE + body + ".swc",
         sourceSha256=digest(raw),
@@ -158,11 +161,11 @@ def prepare_cell(row, cache, tolerance):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--count", type=int, default=768)
+    parser.add_argument("--count", type=int, default=2048)
     parser.add_argument("--tolerance", type=float, default=1.0)
     args = parser.parse_args()
-    if not 137 <= args.count <= 2048 or not 0.1 <= args.tolerance <= 4:
-        parser.error("count must be 137–2048; tolerance must be 0.1–4 µm")
+    if not 137 <= args.count <= 4096 or not 0.1 <= args.tolerance <= 4:
+        parser.error("count must be 137–4096; tolerance must be 0.1–4 µm")
     source_dir = ROOT / "public/malecns"
     output = source_dir / "atlas-v1"
     cache = ROOT / ".local-data/atlas-swc"
@@ -180,9 +183,9 @@ def main():
             cells.append(future.result())
             if (i + 1) % 64 == 0:
                 print(f"Morphology {i + 1}/{len(rows)}", flush=True)
-    if sum(c["segments"] for c, _ in cells) > 2_000_000:
+    if sum(c["segments"] for c, _ in cells) > 4_000_000:
         raise ValueError(
-            "Overview exceeds two million segments; increase tolerance or reduce selection"
+            "Overview exceeds four million segments; increase tolerance or reduce selection"
         )
     chunks = []
     for group in range(4):

@@ -1,0 +1,104 @@
+{
+  "schema": "malecns-membranes/1",
+  "source": "https://storage.googleapis.com/flyem-male-cns/v1.0/segmentation/multi-res-meshes",
+  "license": "CC-BY-4.0",
+  "decoder": "cloud-volume==12.14.4",
+  "sourceMeshInfo": {
+    "@type": "neuroglancer_multilod_draco",
+    "lod_scale_multiplier": 1.0,
+    "sharding": {
+      "@type": "neuroglancer_uint64_sharded_v1",
+      "data_encoding": "gzip",
+      "hash": "murmurhash3_x86_128",
+      "minishard_bits": 8,
+      "minishard_index_encoding": "gzip",
+      "preshift_bits": 6,
+      "shard_bits": 10
+    },
+    "transform": [
+      16.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      16.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      16.0,
+      0.0
+    ],
+    "vertex_quantization_bits": 16
+  },
+  "sourceMeshInfoSha256": "2d9e9eb06a7125604e64bb47d397245584d1d81bb2fe3aa0ac9703b190d50447",
+  "coordinates": "micrometres (x,-z,y)",
+  "cells": [
+    {
+      "bodyId": "10001",
+      "type": "DNp01",
+      "file": "10001-a8ff4dc4ee59.bin.gz",
+      "sha256": "a8ff4dc4ee599804cc116ff40244818cd724817d09512be5b3db5fd68e5442c6",
+      "decodedBytes": 13093784,
+      "vertices": 396236,
+      "faces": 694912,
+      "lod": 2,
+      "bounds": [
+        [
+          262.4639892578125,
+          -734.8482055664062,
+          158.0164031982422
+        ],
+        [
+          401.7281188964844,
+          -125.055908203125,
+          447.2318115234375
+        ]
+      ]
+    },
+    {
+      "bodyId": "519667",
+      "type": "MN6",
+      "file": "519667-4933b7e8c546.bin.gz",
+      "sha256": "4933b7e8c5463f7345056b318c6075737037bdf254eee8e02e6274e82972cbeb",
+      "decodedBytes": 1744436,
+      "vertices": 50145,
+      "faces": 95224,
+      "lod": 2,
+      "bounds": [
+        [
+          288.06439208984375,
+          -253.6958770751953,
+          309.1837158203125
+        ],
+        [
+          468.3521423339844,
+          -157.3444061279297,
+          441.7277526855469
+        ]
+      ]
+    },
+    {
+      "bodyId": "935186",
+      "type": "Dm3b",
+      "file": "935186-5d27fa896991.bin.gz",
+      "sha256": "5d27fa896991c4f793e55150d9f7aaeb3301db95dcec047724d218d28f3ba162",
+      "decodedBytes": 118160,
+      "vertices": 3402,
+      "faces": 6444,
+      "lod": 2,
+      "bounds": [
+        [
+          669.2161865234375,
+          -292.6724548339844,
+          156.57638549804688
+        ],
+        [
+          693.8235473632812,
+          -237.24761962890625,
+          208.57618713378906
+        ]
+      ]
+    }
+  ]
+}

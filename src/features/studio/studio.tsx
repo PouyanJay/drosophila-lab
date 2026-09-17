@@ -1,5 +1,6 @@
 'use client';
 import { takeBrowserWorker } from '@/lib/client/browser-compute';
+import { AtlasExploreControls } from '@/features/atlas/atlas-explore-controls';
 import DiscoveryPanel from '@/features/discovery/discovery-panel';
 import {
   DiscoveryConfig,
@@ -12,7 +13,7 @@ import BrandLogo from '@/components/brand-logo';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 import { createPortal } from 'react-dom';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   ArrowRight,
   ArrowUp,
@@ -73,6 +74,7 @@ import {
 } from '@/lib/planning/experiment-suggestions';
 import './experiment.css';
 import './workspace.css';
+import './workspace-theme.css';
 import { useAtlasVariant } from '@/features/atlas/use-atlas-variant';
 import { labOptions } from '@/lib/planning/lab-planner';
 import { LabConfig, defaultLabConfig, labConfigSchema } from '@/lib/contracts/lab-contract';
@@ -88,7 +90,26 @@ const colors = ['#83b5d9', '#b3a0db', '#d9b486', '#91c5b3'],
 const n = (v: number) => v.toLocaleString(),
   pc = (v: number) => `${(v * 100).toFixed(1)}%`;
 
+function readAtlasTheme(): 'light' | 'dark' {
+  try {
+    return localStorage.getItem('drosophila-atlas-theme') === 'light' ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
+}
+function subscribeAtlasTheme(update: () => void) {
+  window.addEventListener('storage', update);
+  window.addEventListener('atlas-theme', update);
+  return () => {
+    window.removeEventListener('storage', update);
+    window.removeEventListener('atlas-theme', update);
+  };
+}
+
 const initialSettings: AtlasSettings = {
+  colorMode: 'cell',
+  ghostContext: true,
+  contextBrightness: 0.3,
   surfaces: true,
   somas: false,
   fibers: true,
@@ -268,8 +289,25 @@ export default function AtlasStudio() {
     discoveryMode ? runAncestors : variantSource === 'run' ? runAncestors : undefined,
     discoveryMode ? !!discoveryVariant : stage === 4 || !!runConfig,
   );
+  const storedAtlasTheme = useSyncExternalStore(
+    subscribeAtlasTheme,
+    readAtlasTheme,
+    () => 'dark' as const,
+  );
+  const atlasTheme = settings.theme ?? storedAtlasTheme;
+  useLayoutEffect(() => {
+    // Theme the document so Radix portals share the workspace's appearance.
+    const root = document.documentElement;
+    const previous = root.dataset.workspaceTheme;
+    root.dataset.workspaceTheme = atlasTheme;
+    return () => {
+      if (previous === undefined) delete root.dataset.workspaceTheme;
+      else root.dataset.workspaceTheme = previous;
+    };
+  }, [atlasTheme]);
   const atlasSettings = {
     ...settings,
+    theme: atlasTheme,
     comparison: visualMode === 'compare',
     ancestors: visualMode === 'original' ? [] : variant.positions,
   };
@@ -314,7 +352,31 @@ export default function AtlasStudio() {
     setModelSelection(selection);
     setGuideMode(selection.provider === 'guided' ? 'guided' : 'ai');
   };
-  const change = (patch: Partial<AtlasSettings>) => setSettings((s) => ({ ...s, ...patch }));
+  const neuronPickRequest = useRef(0);
+  const change = (patch: Partial<AtlasSettings>) => {
+    if (patch.theme) {
+      try {
+        localStorage.setItem('drosophila-atlas-theme', patch.theme);
+        window.dispatchEvent(new Event('atlas-theme'));
+      } catch {
+        /* Keep the in-memory preference. */
+      }
+    }
+    if ('selectedBody' in patch || 'selectedRegion' in patch || 'destination' in patch)
+      neuronPickRequest.current++;
+    if (patch.selectedBody === null && patch.selectedRegion === null) setSelected(null);
+    setSettings((s) => ({
+      ...s,
+      ...(['scope', 'inventory', 'group', 'selectedRegion', 'selectedBody'].some(
+        (key) => key in patch,
+      ) && !('destination' in patch)
+        ? { destination: undefined }
+        : {}),
+      ...('selectedBody' in patch && !('focusType' in patch) ? { focusType: undefined } : {}),
+      ...(patch.selectedBody === null ? { isolateNeuron: false } : {}),
+      ...patch,
+    }));
+  };
   useEffect(() => {
     let alive = true;
     Promise.all([
@@ -492,16 +554,40 @@ export default function AtlasStudio() {
     setDrawer('');
   }
   function selectRegion(r: any) {
+    neuronPickRequest.current++;
     setSelected({ kind: 'region', ...r });
     change({ selectedRegion: r.id, selectedBody: null, selectedPoint: null, isolate: false });
     setDrawer('');
   }
+  async function pickAtlasNeuron(bodyId: string) {
+    const request = ++neuronPickRequest.current;
+    try {
+      let rows = catalog;
+      if (!rows.length) {
+        const response = await fetch('/malecns/neurons.json');
+        if (!response.ok) throw Error('Neuron details could not load.');
+        rows = await response.json();
+        setCatalog(rows);
+      }
+      if (request !== neuronPickRequest.current) return;
+      const neuron = rows.find((row) => String(row[0]) === bodyId);
+      if (neuron) {
+        selectNeuron(neuron);
+        return true;
+      }
+    } catch {
+      if (request === neuronPickRequest.current)
+        setError('Neuron details could not load. Click again to retry.');
+    }
+  }
   function selectNeuron(a: any) {
+    neuronPickRequest.current++;
     setSelected({ kind: 'neuron', data: a });
     change({
       selectedRegion: null,
       selectedBody: String(a[0]),
-      isolateNeuron: false,
+      focusType: undefined,
+      isolateNeuron: true,
       selectedPoint: a.slice(7, 10),
       group: -1,
       isolate: false,
@@ -1376,14 +1462,15 @@ export default function AtlasStudio() {
           />
           <ResizablePanel id="anatomy" minSize={narrow ? 0 : 320} className="uw-atlas-panel">
             <div className="uw-visual">
-              <section className="da-atlas uw-atlas" aria-label="Atlas workspace">
+              <section
+                className="da-atlas uw-atlas"
+                data-atlas-theme={atlasTheme}
+                aria-label="Atlas workspace"
+              >
                 <AtlasView
                   settings={atlasSettings}
                   onPick={selectRegion}
-                  onNeuronPick={(bodyId) => {
-                    const neuron = catalog.find((row) => String(row[0]) === bodyId);
-                    if (neuron) selectNeuron(neuron);
-                  }}
+                  onNeuronPick={pickAtlasNeuron}
                   onReady={setReady}
                   onRenderer={setRenderer}
                 />
@@ -1444,6 +1531,15 @@ export default function AtlasStudio() {
                 <div className="da-atlas-actions">
                   <button
                     className="da-glass-button"
+                    aria-label="Explore atlas"
+                    title="Explore atlas"
+                    onClick={() => setDrawer('display')}
+                  >
+                    <Settings2 size={17} />
+                    <span>Explore</span>
+                  </button>
+                  <button
+                    className="da-glass-button"
                     aria-label="Find a neuron"
                     title="Find a neuron"
                     onClick={() => setDialog('search')}
@@ -1468,7 +1564,12 @@ export default function AtlasStudio() {
                     title="Reset view"
                     aria-label="Reset view"
                     onClick={() => {
-                      setSettings({ ...initialSettings, resetKey: (settings.resetKey ?? 0) + 1 });
+                      neuronPickRequest.current++;
+                      setSettings({
+                        ...initialSettings,
+                        theme: atlasTheme,
+                        resetKey: (settings.resetKey ?? 0) + 1,
+                      });
                       setSelected(null);
                     }}
                   >
@@ -1561,10 +1662,24 @@ export default function AtlasStudio() {
                       <div className="da-inspect-actions">
                         <button
                           disabled={renderer === '2d'}
-                          onClick={() => change({ isolateNeuron: !settings.isolateNeuron })}
+                          onClick={() =>
+                            change({ isolateNeuron: !settings.isolateNeuron, focusType: undefined })
+                          }
                         >
                           <Focus size={15} />
                           {settings.isolateNeuron ? 'Show context' : 'Isolate neuron'}
+                        </button>
+                        <button
+                          disabled={renderer === '2d' || !selected.data[1]}
+                          aria-pressed={!!settings.focusType}
+                          onClick={() =>
+                            change({
+                              focusType: settings.focusType ? undefined : selected.data[1],
+                              isolateNeuron: false,
+                            })
+                          }
+                        >
+                          {settings.focusType ? 'Show all types' : 'Same type · sample'}
                         </button>
                       </div>
                     )}
@@ -2184,7 +2299,7 @@ export default function AtlasStudio() {
         </button>
       </nav>
       <Sheet open={!!drawer} onOpenChange={(v) => !v && setDrawer('')}>
-        <SheetContent className="da-sheet" side="right">
+        <SheetContent className="da-sheet" data-atlas-theme={atlasTheme} side="right">
           <SheetTitle>{drawer === 'structures' ? 'Anatomical structures' : 'Display'}</SheetTitle>
           <SheetDescription>
             {drawer === 'structures'
@@ -2248,6 +2363,16 @@ export default function AtlasStudio() {
             </>
           ) : (
             <div className="da-display">
+              <AtlasExploreControls
+                onSelectNeuron={async (bodyId) => {
+                  setDrawer('');
+                  if (await pickAtlasNeuron(bodyId))
+                    change({ isolateNeuron: true, ghostContext: true });
+                }}
+                settings={{ ...settings, theme: atlasTheme }}
+                change={change}
+                disabled={renderer === '2d'}
+              />
               <label>
                 Whole central nervous system
                 <Switch

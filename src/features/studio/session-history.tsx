@@ -146,7 +146,10 @@ export default function SessionHistory({
         )}
         <div style={{ maxHeight: '55dvh', overflowY: 'auto' }}>
           {rows.map((row) => (
-            <article key={row.id} style={{ padding: '16px 0', borderBottom: '1px solid #27313d' }}>
+            <article
+              key={row.id}
+              style={{ padding: '16px 0', borderBottom: '1px solid var(--border)' }}
+            >
               <button
                 className="da-text-button"
                 disabled={busy}
@@ -154,7 +157,7 @@ export default function SessionHistory({
               >
                 {row.name}
               </button>
-              <p style={{ fontSize: 12, color: '#98a4b5' }}>
+              <p style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
                 {new Date(row.updated_at).toLocaleString()}
               </p>
               <div style={{ display: 'flex', gap: 16 }}>

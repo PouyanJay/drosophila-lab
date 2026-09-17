@@ -1,0 +1,486 @@
+/* Workspace chrome only. Atlas materials and biological colors are independent. */
+html[data-workspace-theme='light'] {
+  color-scheme: light;
+  --background: #f5f7fa;
+  --foreground: #243247;
+  --card: #fff;
+  --card-foreground: #243247;
+  --popover: #fff;
+  --popover-foreground: #243247;
+  --primary: #245fa5;
+  --primary-foreground: #fff;
+  --secondary: #edf2f8;
+  --secondary-foreground: #354960;
+  --muted: #edf2f8;
+  --muted-foreground: #53647a;
+  --accent: #e5effb;
+  --accent-foreground: #194f90;
+  --destructive: #b42332;
+  --border: #ccd6e2;
+  --input: #8596ac;
+  --ring: #245fa5;
+}
+html[data-workspace-theme='light'] body {
+  background: var(--background);
+  color: var(--foreground);
+}
+html[data-workspace-theme='light'] .uw-studio {
+  --da-bg: #f5f7fa;
+  --da-fg: #243247;
+  --da-muted: #53647a;
+  --da-line: #ccd6e2;
+  --da-accent: #245fa5;
+  background: var(--background);
+  color: var(--foreground);
+}
+/* A quiet off-white rail separates the conversation from the white atlas. */
+html[data-workspace-theme='light']
+  :is(
+    .uw-header,
+    .uw-chat-panel,
+    .uw-logo-rail,
+    .uw-mobile-nav,
+    .uw-studio .de-experiment,
+    .uw-conversation-header,
+    .uw-evidence-drawer,
+    .uw-evidence-heading,
+    .uw-evidence-bar,
+    .de-page-tools
+  ) {
+  background: var(--background);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+html[data-workspace-theme='light'] .de-active .de-input-area {
+  background: linear-gradient(transparent, #f5f7fa 25%);
+}
+html[data-workspace-theme='light']
+  :is(
+    .uw-workspace-name > a,
+    .uw-chat-title,
+    .de-welcome-heading h1,
+    .da-message p,
+    .da-message-author,
+    .da-plan h2,
+    .da-plan-title,
+    .de-starters b,
+    .discovery-panel,
+    .discovery-scores b,
+    .da-model-menu-top,
+    .da-provider-heading,
+    .da-model-option,
+    .da-offline-option,
+    .dc-label,
+    .dc-form label,
+    .dc-steps,
+    .dc-details summary,
+    .cd-tile strong,
+    .cd-billing-card h3,
+    .cd-chart h3,
+    .cd-breakdown h3
+  ) {
+  color: var(--foreground);
+}
+html[data-workspace-theme='light']
+  :is(
+    .uw-source-label,
+    .uw-header-button,
+    .uw-spend-badge,
+    .uw-collapse-chat,
+    .uw-reopen-chat,
+    .uw-evidence-empty,
+    .da-kicker,
+    .de-welcome-heading p,
+    .de-starters small,
+    .de-starter-icon,
+    .de-starters svg,
+    .da-conversation-foot,
+    .de-engine-note,
+    .de-brief p,
+    .de-thinking,
+    .da-message-model,
+    .da-message-cost,
+    .da-plan p,
+    .da-plan small,
+    .da-evidence-empty,
+    .da-chart-empty,
+    .discovery-panel p,
+    .discovery-evidence p,
+    .discovery-candidates small,
+    .discovery-topology small,
+    .discovery-scores span,
+    .discovery-clarification,
+    .dc-muted,
+    .dc-machine small,
+    .dc-instant small,
+    .dc-choices small,
+    .dc-training-approach p,
+    .dc-training-approach small,
+    .fl-compute-status,
+    .da-provider-heading small,
+    .da-model-empty,
+    .da-model-menu-foot p,
+    .cd-note,
+    .cd-status,
+    .cd-empty,
+    .cd-tile span,
+    .cd-tile small,
+    .cd-legend,
+    .cd-table th,
+    .cd-table td small,
+    .cd-table-view summary,
+    .cd-bar-value,
+    .cd-billing-card label,
+    .cd-billing-key summary,
+    .cd-billing-key label
+  ) {
+  color: var(--muted-foreground);
+}
+html[data-workspace-theme='light']
+  :is(
+    .uw-studio .da-composer,
+    .da-plan,
+    .discovery-panel,
+    .discovery-candidates button,
+    .cd-tile,
+    .cd-chart,
+    .cd-billing-card,
+    .cd-alerts li.done,
+    .uw-change-context,
+    .uw-comparison-labels,
+    .dc-choices button
+  ) {
+  background: var(--card);
+  color: var(--foreground);
+  border-color: var(--border);
+  box-shadow: 0 2px 8px #24324705;
+}
+/* Portals live outside the studio; use the same document theme. */
+html[data-workspace-theme='light'] :is(.da-model-popover, .da-dialog, .da-sheet) {
+  background: var(--card) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 16px 48px #24324724 !important;
+}
+html[data-workspace-theme='light'] :is(.da-dialog, .da-sheet) p {
+  color: var(--muted-foreground) !important;
+}
+html[data-workspace-theme='light']
+  :is(
+    .da-dialog input,
+    .da-dialog select,
+    .da-dialog textarea,
+    .da-sheet input,
+    .da-sheet select,
+    .da-model-search,
+    .da-model-search input,
+    .discovery-panel select,
+    .discovery-panel textarea,
+    .discovery-panel input,
+    .uw-studio .da-composer textarea,
+    .da-search-input input
+  ) {
+  background: var(--card) !important;
+  color: var(--foreground) !important;
+  border-color: var(--input) !important;
+  caret-color: var(--primary);
+}
+html[data-workspace-theme='light'] :is(input, textarea)::placeholder {
+  color: var(--muted-foreground) !important;
+  opacity: 1;
+}
+html[data-workspace-theme='light']
+  :is(
+    .da-model-trigger,
+    .da-compute-trigger,
+    .da-suggestions button,
+    .dc-training-approach summary,
+    .dc-training-approach button,
+    .cd-chip,
+    .cd-breakdown button,
+    .cd-tabs button,
+    .cd-billing-actions button,
+    .da-search-results button
+  ) {
+  color: var(--secondary-foreground);
+  border-color: var(--border);
+}
+html[data-workspace-theme='light']
+  :is(
+    .uw-header-button:hover,
+    .uw-spend-badge:hover,
+    .uw-rail-logo:hover,
+    .da-model-trigger:hover,
+    .da-compute-trigger:hover,
+    .de-starters > button:hover,
+    .da-suggestions button:hover,
+    .da-model-option:hover,
+    .dc-machine:hover,
+    .cd-breakdown button:hover,
+    .da-search-results button:hover
+  ) {
+  background: var(--secondary);
+  color: var(--foreground);
+}
+html[data-workspace-theme='light']
+  :is(
+    .discovery-facts span,
+    .da-plan-changes span,
+    .da-message.user > div,
+    .dc-command,
+    .dc-title-icon,
+    .cd-alerts button
+  ) {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border-color: var(--border);
+}
+html[data-workspace-theme='light']
+  :is(
+    .da-model-option.selected,
+    .dc-instant,
+    .dc-instant:hover,
+    .dc-training-approach button[aria-pressed='true'],
+    .discovery-mode-button[aria-pressed='true'],
+    .cd-chip.active,
+    .cd-breakdown button[aria-pressed='true'],
+    .atlas-color-options button[aria-pressed='true']
+  ) {
+  background: var(--accent);
+  color: var(--accent-foreground);
+  border-color: #8baed6;
+}
+html[data-workspace-theme='light']
+  :is(.da-primary, .uw-studio .da-primary, .cd-primary, .cd-billing-actions .cd-primary) {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+html[data-workspace-theme='light'] :is(.da-primary, .cd-primary):hover {
+  background: #194f90;
+}
+html[data-workspace-theme='light']
+  :is(
+    .da-dialog a,
+    .dc-help-link,
+    .dc-details a,
+    .discovery-topology button,
+    .cd-table a,
+    .cd-billing-card a,
+    .da-connect-provider
+  ) {
+  color: var(--primary);
+}
+html[data-workspace-theme='light']
+  :is(
+    .discovery-live,
+    .discovery-table th,
+    .discovery-table td,
+    .dc-training-approach,
+    .dc-details,
+    .dc-manage,
+    .da-model-menu-foot,
+    .da-model-search,
+    .cd-tabs,
+    .cd-table th,
+    .cd-table td,
+    .cd-table-view th,
+    .cd-table-view td,
+    .de-brief,
+    .de-starters,
+    .uw-sidebar-divider
+  ) {
+  border-color: var(--border);
+}
+html[data-workspace-theme='light'] .cd-tabs button.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+html[data-workspace-theme='light'] :is(.cd-banner, .cd-alerts li:not(.done)) {
+  background: #fff7e6;
+  color: #805314;
+  border-color: #d6b46b;
+}
+html[data-workspace-theme='light'] :is(.da-model-unpriced, .uw-spend-badge.alerting) {
+  color: #805314;
+}
+html[data-workspace-theme='light'] :is(.cd-error, .da-error) {
+  color: var(--destructive);
+}
+html[data-workspace-theme='light'] :is(.discovery-bar, .cd-bar-track, .da-progress-track) {
+  background: #dce5ef;
+}
+html[data-workspace-theme='light'] .discovery-bar i {
+  background: var(--primary);
+}
+html[data-workspace-theme='light'] progress {
+  accent-color: var(--primary);
+  background: #dce5ef;
+  border-radius: 4px;
+  overflow: hidden;
+}
+html[data-workspace-theme='light'] progress::-webkit-progress-bar {
+  background: #dce5ef;
+}
+html[data-workspace-theme='light'] progress::-webkit-progress-value {
+  background: var(--primary);
+}
+html[data-workspace-theme='light'] progress::-moz-progress-bar {
+  background: var(--primary);
+}
+/* Explicit control contrast; unchecked is still recognizable on a white card. */
+html[data-workspace-theme='light'] [data-slot='switch'] {
+  background: #76879b;
+}
+html[data-workspace-theme='light'] [data-slot='switch'][data-state='checked'] {
+  background: var(--primary);
+}
+html[data-workspace-theme='light'] [data-slot='switch-thumb'] {
+  background: #fff;
+}
+html[data-workspace-theme='light'] input[type='checkbox'] {
+  accent-color: var(--primary);
+}
+html[data-workspace-theme='light'] :is(button, a, input, textarea, select):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+html[data-workspace-theme='light'] .uw-studio .da-atlas-actions .da-glass-button {
+  background: #fff;
+  color: #425b78;
+  border-color: #adbdcf;
+}
+html[data-workspace-theme='light'] .uw-studio .da-atlas-actions .da-glass-button:hover {
+  background: var(--accent);
+  color: var(--primary);
+}
+html[data-workspace-theme='light'] .recharts-cartesian-axis-tick text {
+  fill: #53647a;
+}
+html[data-workspace-theme='light'] .recharts-cartesian-grid line {
+  stroke: #d8e0e9;
+}
+html[data-workspace-theme='light'] .recharts-default-tooltip {
+  background: #fff !important;
+  color: #243247 !important;
+  border-color: #ccd6e2 !important;
+}
+/* Override legacy controls that declare their dark foreground !important. */
+html[data-workspace-theme='light']
+  :is(
+    .da-model-trigger,
+    .da-model-option,
+    .da-offline-option,
+    .uw-studio .da-atlas-actions .da-glass-button
+  ) {
+  color: var(--secondary-foreground) !important;
+}
+html[data-workspace-theme='light'] .da-connect-provider {
+  background: var(--accent);
+  color: var(--accent-foreground) !important;
+  border-color: #8baed6;
+}
+html[data-workspace-theme='light'] .da-provider-icon.openai {
+  filter: none;
+}
+html[data-workspace-theme='light']
+  :is(
+    .da-model-option small,
+    .da-offline-option small,
+    .da-model-trigger > svg:last-child,
+    .uw-evidence-bar > button,
+    .uw-evidence-bar > span,
+    .uw-studio .de-welcome .da-conversation-foot,
+    .da-atlas-foot button
+  ) {
+  color: var(--muted-foreground);
+}
+html[data-workspace-theme='light'] .uw-studio .da-send:not(:disabled) {
+  background: var(--primary);
+  color: #fff !important;
+}
+html[data-workspace-theme='light'] .da-provider-error {
+  color: var(--destructive) !important;
+}
+html[data-workspace-theme='light'] .da-offline-option:hover {
+  background: var(--secondary);
+}
+html[data-workspace-theme='light'] .da-model-options section + section {
+  border-color: var(--border);
+}
+html[data-workspace-theme='light'] .uw-studio .da-message.user {
+  background: var(--secondary);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+/* Experiment configuration and evidence share the conversation's light surfaces. */
+html[data-workspace-theme='light'] .uw-studio {
+  --da-text: #243247;
+}
+html[data-workspace-theme='light'] :is(.uw-studio .fl-setup, .fl-connection) {
+  background: var(--card);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+html[data-workspace-theme='light']
+  :is(
+    .fl-lab p,
+    .fl-lab label,
+    .fl-connection span,
+    .fl-architecture span,
+    .fl-architecture small,
+    .fl-lab .fl-caption,
+    .fl-state,
+    .fl-progress > span,
+    .fl-outcome span,
+    .fl-scores small,
+    .fl-evidence-stats span,
+    .fl-checks th,
+    .fl-trials > div > span,
+    .fl-artifact small,
+    .fl-draft-summary,
+    .de-brief summary,
+    .de-brief summary small,
+    .da-plan-facts,
+    .da-plan-change small,
+    .uw-evidence-heading,
+    .da-outcome span
+  ) {
+  color: var(--muted-foreground);
+}
+html[data-workspace-theme='light'] :is(.fl-lab input, .fl-lab select) {
+  background: var(--card);
+  color: var(--foreground);
+  border-color: var(--input);
+}
+html[data-workspace-theme='light']
+  :is(.fl-state.completed, .fl-architecture > div:last-child, .fl-protocol svg) {
+  color: #216644;
+  border-color: #8fbea5;
+}
+html[data-workspace-theme='light'] .fl-state.failed {
+  color: var(--destructive);
+}
+html[data-workspace-theme='light'] .fl-artifact {
+  color: var(--primary);
+}
+html[data-workspace-theme='light'] :is(.fl-details, .fl-checks td, .fl-checks th) {
+  border-color: var(--border);
+}
+html[data-workspace-theme='light'] .uw-mobile-nav button {
+  color: var(--muted-foreground);
+}
+html[data-workspace-theme='light'] .uw-mobile-nav button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+html[data-workspace-theme='light'] .uw-studio .de-experiment .da-composer:focus-within {
+  background: var(--card);
+  border-color: var(--primary);
+}
+html[data-workspace-theme='light'] .da-primary {
+  color: #fff !important;
+}
+html[data-workspace-theme='light'] .uw-studio .de-experiment .da-conversation-foot {
+  color: var(--muted-foreground);
+}

@@ -3,6 +3,9 @@ import { z } from 'zod';
 const cellSchema = z.object({
   bodyId: z.string().regex(/^\d{1,12}$/),
   type: z.string(),
+  cellClass: z.string().default('other'),
+  side: z.string().default(''),
+  neurotransmitter: z.string().default('unclear'),
   group: z.number().int().min(0).max(3),
   offset: z.number().int().nonnegative(),
   segments: z.number().int().nonnegative(),
@@ -14,16 +17,16 @@ const cellSchema = z.object({
 const chunkSchema = z.object({
   file: z.string().regex(/^group-[0-3]-\d+-[a-f0-9]{12}\.bin\.gz$/),
   group: z.number().int().min(0).max(3),
-  segments: z.number().int().min(1).max(2_000_000),
+  segments: z.number().int().min(1).max(4_000_000),
   decodedByteLength: z.number().int().max(64_000_000),
   sha256: z.string().regex(/^[a-f0-9]{64}$/),
   cells: z.array(cellSchema).min(1).max(32),
 });
 const manifestSchema = z.object({
   schema: z.literal('malecns-atlas/1'),
-  neuronCount: z.number().int().min(1).max(2048),
-  segmentCount: z.number().int().min(1).max(2_000_000),
-  chunks: z.array(chunkSchema).min(1).max(128),
+  neuronCount: z.number().int().min(1).max(4096),
+  segmentCount: z.number().int().min(1).max(4_000_000),
+  chunks: z.array(chunkSchema).min(1).max(131),
 });
 export type MorphologyCell = z.infer<typeof cellSchema>;
 export type MorphologyChunk = z.infer<typeof chunkSchema>;

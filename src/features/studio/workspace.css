@@ -2160,3 +2160,167 @@
   display: inline-block;
   vertical-align: middle;
 }
+
+/* Atlas exploration lives in the existing display drawer. */
+.atlas-explore {
+  border: 0;
+  padding: 0 0 20px;
+  margin: 0 0 20px;
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+.atlas-explore legend {
+  font-size: 16px;
+  font-weight: 600;
+}
+.atlas-explore h3 {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  margin: 22px 0 10px;
+}
+.atlas-explore-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+.atlas-explore button:not([data-slot='switch']) {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-size: 12px;
+  text-align: left;
+  background: var(--background);
+}
+.atlas-explore button[aria-pressed='true'] {
+  border-color: #45aaff;
+  background: #45aaff18;
+  color: #a5d8ff;
+}
+.atlas-explore button:focus-visible,
+.atlas-explore input:focus-visible {
+  outline: 2px solid #45aaff;
+  outline-offset: 3px;
+}
+.atlas-class-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.da-display .atlas-class-list label {
+  min-height: 28px;
+  display: flex;
+  justify-content: flex-start;
+  gap: 7px;
+  margin: 0;
+  font-size: 12px;
+  cursor: pointer;
+}
+.atlas-class-list input {
+  accent-color: #45aaff;
+}
+.atlas-swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 9px;
+}
+.atlas-explore:disabled {
+  opacity: 0.5;
+}
+
+.uw-studio .uw-atlas {
+  background: #0b1017;
+}
+
+/* Atlas appearance is independent of the conversation workspace. */
+.uw-studio .uw-atlas[data-atlas-theme='light'] {
+  background: #fff;
+  color: #263342;
+}
+[data-atlas-theme='light'] .atlas-morphology-status,
+[data-atlas-theme='light'] .da-inspect,
+[data-atlas-theme='light'] .da-camera,
+[data-atlas-theme='light'] .da-glass-button,
+[data-atlas-theme='light'] .da-explode,
+[data-atlas-theme='light'] .uw-variant-switch [data-slot='tabs-list'] {
+  background: #fffffff0;
+  border-color: #d9dfe6;
+  color: #253447;
+  box-shadow: 0 2px 10px #34415608;
+}
+[data-atlas-theme='light'] .da-inspect p,
+[data-atlas-theme='light'] .da-inspect a,
+[data-atlas-theme='light'] .da-atlas-caption,
+[data-atlas-theme='light'] .atlas-morphology-status small {
+  color: #526277;
+}
+[data-atlas-theme='light'] .da-camera button,
+[data-atlas-theme='light'] .da-inspect button {
+  color: #33475e;
+}
+[data-atlas-theme='light'] .da-camera button.active,
+[data-atlas-theme='light'] [data-slot='tabs-trigger'][data-state='active'] {
+  background: #e5edf8;
+  color: #23436c;
+}
+.da-sheet[data-atlas-theme='light'] {
+  --background: #fff;
+  --border: #d7dfe8;
+  --muted-foreground: #596b80;
+  background: #fff !important;
+  color: #263342 !important;
+  border-color: #d7dfe8 !important;
+}
+.da-sheet[data-atlas-theme='light'] p {
+  color: #526277 !important;
+}
+.da-sheet[data-atlas-theme='light'] .atlas-explore button[aria-pressed='true'] {
+  color: #20558a;
+  background: #eaf3ff;
+}
+.da-sheet[data-atlas-theme='light'] [data-slot='sheet-description'] {
+  color: #526277;
+}
+[data-atlas-theme='light'] .uw-selection-chat {
+  background: #edf2f8;
+  border-color: #d0dae6;
+  color: #2d496a;
+}
+[data-atlas-theme='light'] .da-atlas-actions button {
+  color: #405b79;
+}
+[data-atlas-theme='light'] .da-camera button[aria-pressed='true'] {
+  background: #e5edf8;
+  color: #23436c;
+}
+[data-atlas-theme='light'] .da-assembly {
+  background: #fffffff0;
+  border-color: #d9dfe6;
+  color: #344b65;
+}
+[data-atlas-theme='light'] .da-assembly button {
+  color: #52677f;
+}
+[data-atlas-theme='light'] .da-assembly button[aria-pressed='true'] {
+  color: #233b56;
+}
+[data-atlas-theme='light'] .atlas-fallback-status {
+  background: #fff;
+  color: #40546c;
+  border-color: #d7dfe8;
+}
+.uw-studio [data-atlas-theme='light'] .da-atlas-actions .da-glass-button {
+  color: #405b79;
+}
+.da-sheet[data-atlas-theme='light'] h2 {
+  color: #24364c;
+}
+[data-atlas-theme='light'] .atlas-loading,
+[data-atlas-theme='light'] .atlas-error {
+  background: #fffffff0;
+  color: #344b65;
+  border-color: #d9dfe6;
+}

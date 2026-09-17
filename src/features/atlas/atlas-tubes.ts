@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { cellColor } from './atlas-appearance';
 import type { MorphologyChunk } from './atlas-morphology';
 
 // Original capsule-impostor implementation: four vertices per source segment.
@@ -8,6 +9,7 @@ const vertexShader = /* glsl */ `
 attribute vec4 branchStart;
 attribute vec4 branchEnd;
 attribute float cellId;
+attribute float cellVisible;
 attribute vec3 cellColor;
 uniform float radiusScale;
 varying vec2 capsule;
@@ -18,6 +20,7 @@ varying vec3 lateral;
 varying vec3 longitudinal;
 varying vec3 tint;
 varying float identity;
+varying float visibility;
 #include <clipping_planes_pars_vertex>
 void main() {
   vec3 a = (modelViewMatrix * vec4(branchStart.xyz, 1.0)).xyz;
@@ -55,14 +58,20 @@ void main() {
   longitudinal = direction;
   tint = cellColor;
   identity = cellId;
+  visibility = cellVisible;
   vec4 mvPosition = vec4(p, 1.0);
   gl_Position = projectionMatrix * mvPosition;
   #include <clipping_planes_vertex>
 }`;
 const fragmentShader = /* glsl */ `
 uniform float selectedId;
+uniform float replacedId;
 uniform float hoveredId;
 uniform float fade;
+uniform float contextBrightness;
+uniform float focusDistance;
+uniform bool depthCue;
+uniform bool lightTheme;
 uniform bool picking;
 uniform bool isolateSelected;
 uniform mat4 projectionMatrix;
@@ -74,10 +83,12 @@ varying vec3 lateral;
 varying vec3 longitudinal;
 varying vec3 tint;
 varying float identity;
+varying float visibility;
 #include <clipping_planes_pars_fragment>
 void main() {
   #include <clipping_planes_fragment>
-  if (fade <= 0.0) discard;
+  if (fade <= 0.0 || visibility < 0.5) discard;
+  if (!picking && replacedId > 0.0 && abs(identity - replacedId) < 0.5) discard;
   if (isolateSelected && selectedId > 0.0 && abs(identity - selectedId) > 0.5) discard;
   // Ordered coverage keeps depth meaningful while inventory fades the anatomy.
   if (fract(dot(floor(gl_FragCoord.xy), vec2(0.75487766, 0.56984029))) > fade) discard;
@@ -96,20 +107,23 @@ void main() {
     gl_FragColor = vec4(mod(id, 256.0), mod(floor(id / 256.0), 256.0), floor(id / 65536.0), 255.0) / 255.0;
     return;
   }
-  float key = max(0.0, dot(normal, normalize(vec3(-0.45, 0.65, 1.0))));
+  float key = max(0.0, dot(normal, normalize(vec3(-0.7, 0.8, 0.45))));
   float fill = max(0.0, dot(normal, normalize(vec3(0.8, -0.2, 0.5))));
   float edge = pow(1.0 - max(0.0, dot(normal, eye)), 2.0);
   bool selected = abs(identity - selectedId) < 0.5;
   bool hovered = abs(identity - hoveredId) < 0.5;
-  vec3 albedo = (selected || hovered) ? mix(tint, vec3(1.0, 0.65, 0.23), selected ? 0.65 : 0.3) : tint;
-  vec3 color = albedo * (0.14 + 0.8 * key + 0.18 * fill) + vec3(0.07, 0.1, 0.15) * edge;
-  if (selectedId > 0.0 && !selected) color *= 0.20;
+  vec3 albedo = tint * (selected ? 1.12 : hovered ? 1.18 : 1.0);
+  vec3 color = albedo * ((lightTheme ? 0.22 : 0.40) + 0.85 * key + 0.18 * fill) + albedo * 0.12 * edge;
+  if (depthCue) color *= mix(lightTheme ? 0.65 : 0.8, 1.0, smoothstep(-220.0, 220.0, focusDistance + viewPosition.z));
+  if (selectedId > 0.0 && !selected) {
+    float gray = dot(color, vec3(0.2126, 0.7152, 0.0722));
+    color = mix(vec3(gray * 0.72, gray * 0.82, gray), color, 0.12) * contextBrightness;
+  }
   gl_FragColor = vec4(color, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }`;
 
-const groupColors = ['#67bce5', '#9b91f5', '#dfb37f', '#84c9b5'];
 export type TubeMesh = THREE.Mesh<THREE.InstancedBufferGeometry, THREE.ShaderMaterial>;
 
 export function createTubeChunk(
@@ -131,13 +145,15 @@ export function createTubeChunk(
   const bounds = new THREE.Box3();
   for (const [i, cell] of chunk.cells.entries()) {
     ids.fill(firstId + i, cell.offset, cell.offset + cell.segments);
-    const color = new THREE.Color(groupColors[cell.group]);
-    const variation = (Number(cell.bodyId) * 0.61803398875) % 1;
-    color.offsetHSL((variation - 0.5) * 0.12, -0.04, (variation - 0.5) * 0.18);
+    const color = new THREE.Color(cellColor(cell, 'class'));
     for (let j = cell.offset; j < cell.offset + cell.segments; j++) color.toArray(colors, j * 3);
     bounds.expandByPoint(new THREE.Vector3(...cell.bounds[0]));
     bounds.expandByPoint(new THREE.Vector3(...cell.bounds[1]));
   }
+  geometry.setAttribute(
+    'cellVisible',
+    new THREE.InstancedBufferAttribute(new Float32Array(chunk.segments).fill(1), 1),
+  );
   geometry.setAttribute('cellId', new THREE.InstancedBufferAttribute(ids, 1));
   geometry.setAttribute('cellColor', new THREE.InstancedBufferAttribute(colors, 3));
   geometry.instanceCount = chunk.segments;
@@ -149,8 +165,13 @@ export function createTubeChunk(
     side: THREE.DoubleSide,
     uniforms: {
       selectedId: { value: 0 },
+      replacedId: { value: 0 },
       hoveredId: { value: 0 },
       fade: { value: 1 },
+      contextBrightness: { value: 0.12 },
+      focusDistance: { value: 1200 },
+      depthCue: { value: true },
+      lightTheme: { value: false },
       picking: { value: false },
       isolateSelected: { value: false },
       radiusScale: { value: 1 },
@@ -158,6 +179,6 @@ export function createTubeChunk(
   });
   const mesh = new THREE.Mesh(geometry, material);
   mesh.frustumCulled = false;
-  mesh.userData = { group: chunk.group, bounds };
+  mesh.userData = { group: chunk.group, bounds, cells: chunk.cells };
   return mesh;
 }
