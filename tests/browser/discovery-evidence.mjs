@@ -291,7 +291,7 @@ try {
   await page.getByRole('button', { name: 'Evidence', exact: true }).click();
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   assert(await evidence.evaluate((e) => e.scrollWidth <= e.clientWidth));
-  await page.locator('.uw-evidence-drawer').evaluate((e) => (e.scrollTop = 0));
+  await page.locator('.uw-evidence-body:not([hidden])').evaluate((e) => (e.scrollTop = 0));
   await page.screenshot({ path: '.validation/evidence-redesign-mobile.png' });
   assert.equal(errors.length, 0, errors.join('\n'));
   console.log(

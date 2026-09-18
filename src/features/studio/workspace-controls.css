@@ -697,3 +697,46 @@ html[data-workspace-theme='light'] .uw-evidence-heading h2 {
   overflow: visible;
   max-height: none;
 }
+
+/* Dark-mode background comparison: swap atlas and evidence-bar surfaces. */
+html[data-workspace-theme='dark'] .uw-studio .uw-atlas {
+  background: #000;
+}
+html[data-workspace-theme='dark'] .uw-studio .uw-evidence-bar {
+  background: #0b1017;
+}
+
+html[data-workspace-theme='dark'] .uw-studio .da-atlas-actions .da-glass-button {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+html[data-workspace-theme='dark'] .uw-studio .da-atlas-actions .da-glass-button:hover {
+  color: #fff;
+}
+.uw-studio .uw-evidence-drawer[data-discovery='true'] {
+  margin: 0;
+  border-radius: 0;
+  overflow: hidden;
+}
+.uw-studio .uw-evidence-drawer[data-discovery='true']:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+}
+.uw-evidence-drawer[data-discovery='true'] > .uw-evidence-heading {
+  position: relative;
+  flex: none;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--background);
+  backdrop-filter: none;
+}
+.uw-evidence-drawer[data-discovery='true'] > .uw-evidence-body:not([hidden]) {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 20px 24px;
+  scrollbar-width: thin;
+}

@@ -75,7 +75,9 @@ try {
   );
   assert.equal(await page.locator('.discovery-evidence .da-primary').count(), 0);
   const top = await exportLink.boundingBox();
-  await page.locator('.uw-evidence-drawer').evaluate((e) => (e.scrollTop = e.scrollHeight));
+  await page
+    .locator('.uw-evidence-body:not([hidden])')
+    .evaluate((e) => (e.scrollTop = e.scrollHeight));
   await page.waitForTimeout(300);
   const after = await exportLink.boundingBox();
   assert(Math.abs(top.y - after.y) < 2, 'Export stays in sticky evidence header');

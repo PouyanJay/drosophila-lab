@@ -1953,6 +1953,7 @@ export default function AtlasStudio() {
               </div>
               <section
                 className="uw-evidence-drawer"
+                data-discovery={discoveryMode}
                 aria-label="Experiment evidence"
                 hidden={!evidenceOpen}
               >
