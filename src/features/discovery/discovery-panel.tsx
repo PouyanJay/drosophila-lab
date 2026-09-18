@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Download, GitBranch, Pause, Play, RefreshCw, Square } from 'lucide-react';
+import { Download, FlaskConical, Pause, Play, RefreshCw, Square } from 'lucide-react';
 import { DiscoveryConfig, discoverySchema } from '@/lib/contracts/discovery-contract';
 import DiscoveryEvidence from './discovery-evidence';
 import './discovery.css';
@@ -109,7 +109,7 @@ export default function DiscoveryPanel({
     <section className="discovery-panel">
       <div className="discovery-heading">
         <span>
-          <GitBranch size={16} />
+          <FlaskConical size={16} />
           Discovery
         </span>
         <button className="da-icon" aria-label="Refresh discoveries" onClick={refresh}>

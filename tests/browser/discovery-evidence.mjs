@@ -172,6 +172,36 @@ try {
     name: `Source 1, body ${sourceIds[0]}, 1 copy`,
     exact: true,
   });
+  for (const mode of ['Candidate', 'Compare']) {
+    await page.getByRole('tab', { name: mode, exact: true }).click();
+    const fullSystem = page.getByRole('button', { name: 'Full system', exact: true });
+    await page.waitForTimeout(1300);
+    const previousScope = await fullSystem.getAttribute('aria-pressed');
+    const beforeScope = await marker.boundingBox();
+    await fullSystem.click();
+    await page.waitForTimeout(1300);
+    assert.notEqual(await fullSystem.getAttribute('aria-pressed'), previousScope);
+    const afterScope = await marker.boundingBox();
+    assert(
+      Math.abs(afterScope.y - beforeScope.y) + Math.abs(afterScope.x - beforeScope.x) > 2,
+      `${mode}: full system changes actual camera framing`,
+    );
+    const rotate = page.getByRole('button', { name: 'Auto-rotate', exact: true });
+    await rotate.click();
+    await page.waitForTimeout(300);
+    const beforeRotation = await marker.boundingBox();
+    await page.waitForTimeout(1000);
+    const afterRotation = await marker.boundingBox();
+    assert.equal(await rotate.getAttribute('aria-pressed'), 'true');
+    assert(
+      Math.abs(afterRotation.x - beforeRotation.x) + Math.abs(afterRotation.y - beforeRotation.y) >
+        0.1,
+      `${mode}: auto-rotate moves the rendered source marker`,
+    );
+    await rotate.click();
+  }
+  await page.getByRole('tab', { name: 'Candidate', exact: true }).click();
+  await page.waitForTimeout(1300);
   await marker.click();
   assert.equal(await marker.getAttribute('aria-pressed'), 'true');
   assert(await inspection.getByRole('region', { name: 'Source modifications' }).isVisible());

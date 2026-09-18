@@ -29,7 +29,8 @@ import {
   Focus,
   Expand,
   RotateCw,
-  GitCompareArrows,
+  FlaskConical,
+  Columns2,
   Moon,
   Sun,
   History,
@@ -332,11 +333,8 @@ export default function AtlasStudio() {
           selectedRegion: null,
           group: -1,
           hidden: undefined,
-          scope: variant.positions.some((position) => position[1] < -450) ? 'cns' : 'brain',
-          destination: undefined,
           explode: 0,
           slice: 0,
-          autoRotate: false,
           inspection: true,
         }
       : {}),
@@ -1400,7 +1398,7 @@ export default function AtlasStudio() {
                           setVisualMode('original');
                         }}
                       >
-                        <GitCompareArrows size={17} />
+                        <FlaskConical size={15} />
                       </button>
                     </div>
                     <button
@@ -1534,7 +1532,7 @@ export default function AtlasStudio() {
                         Candidate
                       </TabsTrigger>
                       <TabsTrigger value="compare" disabled={!variant.available}>
-                        <GitCompareArrows size={15} />
+                        <Columns2 size={15} />
                         Compare
                       </TabsTrigger>
                     </TabsList>
