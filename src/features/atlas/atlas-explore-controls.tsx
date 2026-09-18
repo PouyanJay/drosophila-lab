@@ -18,29 +18,16 @@ export function AtlasExploreControls({
   const hidden = settings.hiddenClasses ?? [];
   return (
     <>
-      <label>
-        Light mode{' '}
-        <Switch
-          aria-label="Light mode"
-          checked={settings.theme === 'light'}
-          onCheckedChange={(light) => change({ theme: light ? 'light' : 'dark' })}
-        />
-      </label>
       <fieldset className="atlas-explore" disabled={disabled}>
-        <legend>Explore the anatomy</legend>
-        <p>Colors identify source anatomy, not activity or performance.</p>
+        <legend className="sr-only">Atlas appearance</legend>
         <label>
-          Quiet anatomical context{' '}
+          Anatomical context{' '}
           <Switch
             disabled={disabled}
             checked={!!settings.ghostContext}
             onCheckedChange={(ghostContext) => change({ ghostContext })}
           />
         </label>
-        <p>
-          Neutral translucent compartments keep the surrounding anatomy visible when inspecting a
-          cell.
-        </p>
         <h3>Color by</h3>
         <div className="atlas-explore-options">
           {(
@@ -61,68 +48,54 @@ export function AtlasExploreControls({
             </button>
           ))}
         </div>
-        <h3>Cell classes</h3>
-        <p>
-          Filters apply to the representative neuron layer. Some classes lie outside the current
-          view.
-        </p>
-        <div className="atlas-class-list">
-          {cellClasses.map(([id, label, color]) => (
-            <label key={id}>
-              <input
-                type="checkbox"
-                checked={!hidden.includes(id)}
-                onChange={() =>
-                  change({
-                    hiddenClasses: hidden.includes(id)
-                      ? hidden.filter((value) => value !== id)
-                      : [...hidden, id],
-                  })
-                }
-              />
-              <span
-                className="atlas-swatch"
-                style={{ background: themeColor(color, settings.theme ?? 'dark') }}
-              />
-              <span>{label}</span>
-            </label>
-          ))}
-        </div>
-        {hidden.length > 0 && (
-          <button type="button" onClick={() => change({ hiddenClasses: [] })}>
-            Show all classes
-          </button>
-        )}
-        {(settings.colorMode ?? 'class') !== 'class' && (
-          <p>Class swatches are the legend for “Cell class” mode.</p>
-        )}
-        {settings.colorMode === 'anatomy' && (
-          <p>
-            Teal: left optic lobe · Purple: right optic lobe · Amber: central brain · Green: nerve
-            cord.
-          </p>
-        )}
-        {settings.colorMode === 'cell' && (
-          <p>
-            Distinct cell colors repeat across the sample; they do not encode a biological category.
-          </p>
-        )}
-        <button
-          type="button"
-          onClick={() => change({ snapshotKey: (settings.snapshotKey ?? 0) + 1 })}
-        >
-          Save atlas image
-        </button>
-        <h3>Surface close-ups</h3>
-        <p>Three source membrane reconstructions. Other cells use radius-estimate skeletons.</p>
-        <div className="atlas-explore-options">
-          {membraneGallery.map((cell) => (
-            <button type="button" key={cell.bodyId} onClick={() => onSelectNeuron(cell.bodyId)}>
-              {cell.type} · {cell.bodyId}
+        <details className="atlas-control-section">
+          <summary>
+            Cell classes{' '}
+            <span>
+              {cellClasses.length - hidden.length}/{cellClasses.length}
+            </span>
+          </summary>
+          <div className="atlas-class-list">
+            {cellClasses.map(([id, label, color]) => (
+              <label key={id}>
+                <input
+                  type="checkbox"
+                  checked={!hidden.includes(id)}
+                  onChange={() =>
+                    change({
+                      hiddenClasses: hidden.includes(id)
+                        ? hidden.filter((value) => value !== id)
+                        : [...hidden, id],
+                    })
+                  }
+                />
+                <span
+                  className="atlas-swatch"
+                  style={{ background: themeColor(color, settings.theme ?? 'dark') }}
+                />
+                <span>{label}</span>
+              </label>
+            ))}
+          </div>
+          {hidden.length > 0 && (
+            <button type="button" onClick={() => change({ hiddenClasses: [] })}>
+              Show all classes
             </button>
-          ))}
-        </div>
-        <h3>Vantage points</h3>
+          )}
+        </details>
+        <details className="atlas-control-section">
+          <summary>
+            Surface close-ups <span>3 cells</span>
+          </summary>
+          <div className="atlas-explore-options">
+            {membraneGallery.map((cell) => (
+              <button type="button" key={cell.bodyId} onClick={() => onSelectNeuron(cell.bodyId)}>
+                {cell.type} · {cell.bodyId}
+              </button>
+            ))}
+          </div>
+        </details>
+        <h3>Views</h3>
         <div className="atlas-explore-options">
           {(
             [
@@ -155,50 +128,81 @@ export function AtlasExploreControls({
             </button>
           ))}
         </div>
-        <label>
-          Depth contrast{' '}
-          <Switch
-            disabled={disabled}
-            checked={settings.depthCue !== false}
-            onCheckedChange={(depthCue) => change({ depthCue })}
+        <details className="atlas-control-section">
+          <summary>Depth & motion</summary>
+          <label>
+            Depth contrast{' '}
+            <Switch
+              disabled={disabled}
+              checked={settings.depthCue !== false}
+              onCheckedChange={(depthCue) => change({ depthCue })}
+            />
+          </label>
+          <label>
+            Compartment outlines{' '}
+            <Switch
+              disabled={disabled}
+              checked={!!settings.outlines}
+              onCheckedChange={(outlines) => change({ outlines })}
+            />
+          </label>
+          <label>
+            Slow orbit{' '}
+            <Switch
+              disabled={disabled}
+              checked={!!settings.autoRotate}
+              onCheckedChange={(autoRotate) => change({ autoRotate })}
+            />
+          </label>
+
+          <label>
+            Selected neuron context{' '}
+            <span>{Math.round((settings.contextBrightness ?? 0.12) * 100)}%</span>
+          </label>
+          <Slider
+            disabled={disabled || !!settings.isolateNeuron}
+            aria-label="Selected neuron context"
+            min={0}
+            max={1}
+            step={0.01}
+            value={[settings.contextBrightness ?? 0.12]}
+            onValueChange={(value) => change({ contextBrightness: value[0] })}
           />
-        </label>
-        <label>
-          Compartment outlines{' '}
-          <Switch
-            disabled={disabled}
-            checked={!!settings.outlines}
-            onCheckedChange={(outlines) => change({ outlines })}
-          />
-        </label>
-        <label>
-          Slow orbit{' '}
-          <Switch
-            disabled={disabled}
-            checked={!!settings.autoRotate}
-            onCheckedChange={(autoRotate) => change({ autoRotate })}
-          />
-        </label>
-        <p>
-          Orbit pauses when you interact and respects reduced motion. Toggle off and on to restart.
-        </p>
-        <label>
-          Selected neuron context{' '}
-          <span>{Math.round((settings.contextBrightness ?? 0.12) * 100)}%</span>
-        </label>
-        <Slider
-          disabled={disabled || !!settings.isolateNeuron}
-          aria-label="Selected neuron context"
-          min={0}
-          max={1}
-          step={0.01}
-          value={[settings.contextBrightness ?? 0.12]}
-          onValueChange={(value) => change({ contextBrightness: value[0] })}
-        />
-        <p>
-          Use “Show context” on the selected neuron to reveal surrounding neurons, then adjust their
-          brightness. Anatomical compartments have their own context switch.
-        </p>
+          {settings.isolateNeuron && (
+            <p className="atlas-control-hint">
+              Choose “Show context” on the selected cell to adjust.
+            </p>
+          )}
+        </details>
+        <details className="atlas-control-section atlas-control-notes">
+          <summary>About this view</summary>
+          <p>Drag to rotate; scroll or pinch to zoom.</p>
+          <p>
+            Thickness scales estimated radii for display. Inventory separates surfaces. Neither
+            changes the source brain.
+          </p>
+          <p>
+            Colors show anatomy, not activity or performance. Individual cell colors repeat; class
+            swatches apply to Cell class mode.
+          </p>
+          {settings.colorMode === 'anatomy' && (
+            <p>
+              Teal: left optic lobe · Purple: right optic lobe · Amber: central brain · Green: nerve
+              cord.
+            </p>
+          )}
+          <p>
+            Filters affect the representative sample. Three close-ups use source membranes; other
+            cells use radius-estimate skeletons.
+          </p>
+          <p>Orbit pauses on interaction and respects reduced motion. Toggle it to restart.</p>
+        </details>
+        <button
+          type="button"
+          onClick={() => change({ snapshotKey: (settings.snapshotKey ?? 0) + 1 })}
+        >
+          Save atlas image
+        </button>
       </fieldset>
     </>
   );

@@ -107,7 +107,7 @@ test('published membranes preserve source identity, hashes and the SWC coordinat
   }
 });
 
-test('dark atlas palette raises cell luminance while retaining category identity', async () => {
+test('dark atlas palette keeps readable midtones and distinct category hues', async () => {
   const { cellColor, cellClasses } = await createModuleLoader()(
     '@/features/atlas/atlas-appearance',
   );
@@ -116,6 +116,14 @@ test('dark atlas palette raises cell luminance while retaining category identity
     const light = new THREE.Color(cellColor(cell, 'class', 'light'));
     const dark = new THREE.Color(cellColor(cell, 'class', 'dark'));
     const luminance = (c) => c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722;
-    assert(luminance(dark) >= luminance(light));
+    assert(luminance(dark) > 0.12 && luminance(dark) < 0.55);
+    const lightHsl = light.getHSL({});
+    const darkHsl = dark.getHSL({});
+    const hueDifference = Math.abs(lightHsl.h - darkHsl.h);
+    assert(Math.min(hueDifference, 1 - hueDifference) < 0.06);
+    assert.equal(
+      cellColor(cell, 'class', 'light'),
+      cellClasses.find(([id]) => id === cellClass)[2],
+    );
   }
 });

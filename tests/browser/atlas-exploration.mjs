@@ -60,6 +60,7 @@ import assert from 'node:assert/strict';
     'true',
   );
   await d.getByRole('button', { name: 'Cell class', exact: true }).click();
+  await d.locator('summary').filter({ hasText: 'Cell classes' }).click();
   await d.getByLabel('Central brain', { exact: true }).uncheck();
   await d.getByRole('button', { name: 'Show all classes' }).click();
   await d.evaluate((el) => (el.scrollTop = 0));
@@ -69,6 +70,7 @@ import assert from 'node:assert/strict';
   await d.waitFor({ state: 'hidden' });
   await p.screenshot({ path: '.validation/atlas-exploration-cord.png' });
   await p.getByRole('button', { name: 'Explore atlas' }).click();
+  await d.locator('summary').filter({ hasText: 'Layers & geometry' }).click();
   await d
     .locator('label')
     .filter({ hasText: 'Whole central nervous system' })

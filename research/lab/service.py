@@ -178,6 +178,41 @@ def create_app(store=None,graph=None,key=None,start_executor=True):
         return row
     @app.get('/discoveries/{id}')
     def discovery_detail(id:str,owner=Depends(auth)):return store.public(discovery_row(id,owner))
+    @app.get('/discoveries/{id}/candidates/{candidate}/curves')
+    def discovery_curves(id:str,candidate:str,owner=Depends(auth)):
+        row=discovery_row(id,owner);config=json.loads(row['config'])
+        if not re.fullmatch(r'original|candidate-(?:0|[1-9][0-9]?)',candidate):
+            raise HTTPException(404,'Candidate not found')
+        if candidate!='original' and int(candidate.split('-')[1])>=config['candidates']:
+            raise HTTPException(404,'Candidate not found')
+        root=(store.root/row['id']/candidate).resolve()
+        expected=store.root.resolve()/row['id']/candidate
+        if root!=expected or not root.is_dir():raise HTTPException(404,'Candidate not found')
+        runs=[];topology=None
+        # Enumerate only configured seeds and known phases, never user-selected files.
+        # Completed metrics are authoritative; atomic training snapshots cover live runs.
+        for phase in ('pilot','full','confirmation'):
+            seeds=config['seeds'][:1] if phase=='pilot' else config['seeds']
+            if phase=='confirmation':seeds=[seed+100000 for seed in seeds]
+            for seed in sorted(seeds):
+                member=root/phase/str(seed)
+                metrics=member/'metrics.json';path=metrics if metrics.exists() else member/'training.json'
+                if not path.exists():continue
+                if not path.resolve().is_relative_to(root):raise HTTPException(404,'Candidate data not found')
+                try:
+                    with path.open('rb') as file:raw=file.read(2*1024*1024+1)
+                    if len(raw)>2*1024*1024:raise ValueError('Oversized curve')
+                    saved=json.loads(raw)
+                    curve=saved['curve']
+                    if not isinstance(curve,list) or len(curve)>300:raise ValueError('Invalid curve')
+                except (OSError,ValueError,KeyError,TypeError):
+                    raise HTTPException(503,'Saved candidate curve is unreadable')
+                runs.append(dict(phase=phase,seed=seed,curve=curve,complete=path==metrics))
+                if saved.get('topology') is not None and (topology is None or phase=='full'):
+                    topology=saved['topology']
+        result=dict(candidateId=candidate,runs=runs)
+        if topology is not None:result['topology']=topology
+        return result
     @app.post('/discoveries/{id}/{operation}')
     def discovery_action(id:str,operation:str,owner=Depends(auth)):
         discovery_row(id,owner);return store.public(store.transition(id,owner,operation))

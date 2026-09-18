@@ -156,4 +156,62 @@ class DiscoveryChecks(unittest.TestCase):
         for key,value in [('noise',[float('nan')]),('seeds',[41,41,42]),('examples',9),('maxCopies',0),('task','arbitrary-game')]:
             with self.assertRaises(ValueError):validate(dict(config(),**{key:value}))
 
+class DiscoveryCurveChecks(unittest.TestCase):
+    def test_saved_curves_survive_service_reopen_and_match_worker_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            graph = fixture(root / 'source')
+            store = Store(root / 'runs')
+            row = store.submit('a' * 64, 'curve-history-test', config())
+            output = store.root / row['id']
+            run(config(), graph, output, threads=1)
+            store.set(row['id'], 'completed')
+            headers = {'Authorization': 'Bearer ' + 'x' * 32, 'X-Lab-Owner': 'a' * 64}
+            with TestClient(create_app(Store(store.root), graph, key='x' * 32, start_executor=False)) as client:
+                for candidate in ('original', 'candidate-0', 'candidate-1'):
+                    path = f"/discoveries/{row['id']}/candidates/{candidate}/curves"
+                    response = client.get(path, headers=headers)
+                    self.assertEqual(response.status_code, 200)
+                    data = response.json()
+                    self.assertEqual(data['candidateId'], candidate)
+                    self.assertGreater(len(data['runs']), 0)
+                    for member in data['runs']:
+                        saved = json.loads((output / candidate / member['phase'] / str(member['seed']) / 'metrics.json').read_text())
+                        self.assertEqual(member['curve'], saved['curve'])
+                        self.assertTrue(member['complete'])
+                    self.assertIn('topology', data)
+                    self.assertEqual(client.get(path, headers=dict(headers, **{'X-Lab-Owner': 'b' * 64})).status_code, 404)
+                    self.assertEqual(client.get(path).status_code, 401)
+                    self.assertEqual(response.headers['cache-control'], 'no-store')
+
+    def test_live_missing_invalid_and_unsafe_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            graph = fixture(root / 'source')
+            store = Store(root / 'runs')
+            row = store.submit('a' * 64, 'curve-live-test', config())
+            candidate = store.root / row['id'] / 'candidate-0'
+            member = candidate / 'pilot' / '41'
+            member.mkdir(parents=True)
+            curve = [{'step': 1, 'trainLoss': 1.2, 'validationLoss': 1.3, 'validationAccuracy': .25}]
+            snapshot = member / 'training.json'
+            snapshot.write_text(json.dumps({'curve': curve}))
+            headers = {'Authorization': 'Bearer ' + 'x' * 32, 'X-Lab-Owner': 'a' * 64}
+            prefix = f"/discoveries/{row['id']}/candidates/"
+            with TestClient(create_app(store, graph, key='x' * 32, start_executor=False)) as client:
+                response = client.get(prefix + 'candidate-0/curves', headers=headers)
+                self.assertEqual(response.json()['runs'], [dict(phase='pilot', seed=41, curve=curve, complete=False)])
+                for invalid in ('candidate-1', 'candidate-2', 'candidate-999', 'candidate-00', 'arbitrary'):
+                    self.assertEqual(client.get(prefix + invalid + '/curves', headers=headers).status_code, 404)
+                snapshot.write_text('{broken')
+                self.assertEqual(client.get(prefix + 'candidate-0/curves', headers=headers).status_code, 503)
+                snapshot.unlink()
+                outside = root / 'private.json'
+                outside.write_text(json.dumps({'curve': curve}))
+                snapshot.symlink_to(outside)
+                self.assertEqual(client.get(prefix + 'candidate-0/curves', headers=headers).status_code, 404)
+                snapshot.unlink()
+                self.assertEqual(client.get(prefix + 'candidate-0/curves', headers=headers).json()['runs'], [])
+
+
 if __name__=='__main__':unittest.main()

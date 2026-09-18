@@ -203,6 +203,7 @@ export default function ModelPicker({
             className="da-model-trigger"
             disabled={disabled}
             aria-label={'Choose AI model, ' + selection.name}
+            title={'Choose AI model, ' + selection.name}
           >
             <ProviderIcon provider={selection.provider} />
             <span>{selection.name}</span>

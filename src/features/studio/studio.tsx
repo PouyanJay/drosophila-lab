@@ -2,6 +2,7 @@
 import { takeBrowserWorker } from '@/lib/client/browser-compute';
 import { AtlasExploreControls } from '@/features/atlas/atlas-explore-controls';
 import DiscoveryPanel from '@/features/discovery/discovery-panel';
+import CandidateSourceDetails from '@/features/discovery/candidate-source-details';
 import {
   DiscoveryConfig,
   defaultDiscovery,
@@ -26,7 +27,11 @@ import {
   Eye,
   EyeOff,
   Focus,
+  Expand,
+  RotateCw,
   GitCompareArrows,
+  Moon,
+  Sun,
   History,
   Info,
   Layers3,
@@ -75,6 +80,7 @@ import {
 import './experiment.css';
 import './workspace.css';
 import './workspace-theme.css';
+import './workspace-controls.css';
 import { useAtlasVariant } from '@/features/atlas/use-atlas-variant';
 import { labOptions } from '@/lib/planning/lab-planner';
 import { LabConfig, defaultLabConfig, labConfigSchema } from '@/lib/contracts/lab-contract';
@@ -169,7 +175,8 @@ export default function AtlasStudio() {
   const [discoveryMode, setDiscoveryMode] = useState(false),
     [discoveryConfig, setDiscoveryConfig] = useState<DiscoveryConfig>(defaultDiscovery),
     [discoveryId, setDiscoveryId] = useState<string | null>(null),
-    [discoveryVariant, setDiscoveryVariant] = useState<any>(null);
+    [discoveryVariant, setDiscoveryVariant] = useState<any>(null),
+    [inspectedSource, setInspectedSource] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState(''),
     [historyOpen, setHistoryOpen] = useState(false);
   const [spendOpen, setSpendOpen] = useState(false),
@@ -262,6 +269,8 @@ export default function AtlasStudio() {
   const [chatOpen, setChatOpen] = useState(true),
     [evidenceOpen, setEvidenceOpen] = useState(false),
     [evidenceHost, setEvidenceHost] = useState<HTMLDivElement | null>(null),
+    [atlasStatusHost, setAtlasStatusHost] = useState<HTMLDivElement | null>(null),
+    [evidenceActionsHost, setEvidenceActionsHost] = useState<HTMLDivElement | null>(null),
     [browserHost, setBrowserHost] = useState<HTMLDivElement | null>(null),
     [visualMode, setVisualMode] = useState<'original' | 'candidate' | 'compare'>('original'),
     [variantSource, setVariantSource] = useState<'draft' | 'run'>('draft'),
@@ -305,9 +314,34 @@ export default function AtlasStudio() {
       else root.dataset.workspaceTheme = previous;
     };
   }, [atlasTheme]);
+  const inspectingCandidate = discoveryMode && !!discoveryVariant && visualMode !== 'original';
   const atlasSettings = {
     ...settings,
     theme: atlasTheme,
+    ...(visualMode !== 'original' || evidenceOpen ? { inventory: false, explode: 0 } : {}),
+    ...(inspectingCandidate
+      ? {
+          fibers: false,
+          somas: false,
+          surfaces: true,
+          ghostContext: true,
+          isolate: false,
+          isolateNeuron: false,
+          inventory: false,
+          selectedBody: null,
+          selectedRegion: null,
+          group: -1,
+          hidden: undefined,
+          scope: variant.positions.some((position) => position[1] < -450) ? 'cns' : 'brain',
+          destination: undefined,
+          explode: 0,
+          slice: 0,
+          autoRotate: false,
+          inspection: true,
+        }
+      : {}),
+    sourceMarkers: inspectingCandidate ? variant.sources : undefined,
+    selectedSource: inspectedSource,
     comparison: visualMode === 'compare',
     ancestors: visualMode === 'original' ? [] : variant.positions,
   };
@@ -1265,13 +1299,20 @@ export default function AtlasStudio() {
                       setDiscoveryReady(true);
                     }}
                     selected={discoveryId}
-                    onSelect={setDiscoveryId}
+                    onSelect={(id) => {
+                      setDiscoveryId(id);
+                      setDiscoveryVariant(null);
+                      setVisualMode('original');
+                    }}
                     onStatus={setDiscoveryStatus}
                     locked={thinking || running || !discoveryReady}
                     evidenceHost={evidenceHost}
+                    actionsHost={evidenceActionsHost}
                     onEvidence={showEvidence}
                     onInspect={(meta) => {
                       setDiscoveryVariant(meta);
+                      setInspectedSource(null);
+                      setSettings((s) => ({ ...s, autoRotate: false }));
                       setVisualMode('candidate');
                       setVariantSource('run');
                       setMode('atlas');
@@ -1301,7 +1342,7 @@ export default function AtlasStudio() {
                         : thinking
                           ? 'You can review the brief above while I work…'
                           : welcome
-                            ? 'What could this brain become?\nHow do you want it to improve?'
+                            ? 'Describe how you’d like this brain to improve…'
                             : 'Ask a question or refine your experiment…'
                     }
                     value={draft}
@@ -1330,6 +1371,21 @@ export default function AtlasStudio() {
                         onStatus={setProviderStatuses}
                         disabled={running || thinking}
                       />
+                      <ComputePicker
+                        execution={execution}
+                        onExecution={switchExecution}
+                        health={computeHealth}
+                        selected={computeId}
+                        onSelect={(id) => {
+                          setSelectedJob(null);
+                          setLabJob(null);
+                          setLabEvidence(null);
+                          setComputeId(id);
+                        }}
+                        open={computeOpen}
+                        onOpenChange={setComputeOpen}
+                        disabled={running || thinking || computeBusy || discoveryMode}
+                      />
                       <button
                         type="button"
                         className="discovery-mode-button"
@@ -1346,21 +1402,6 @@ export default function AtlasStudio() {
                       >
                         <GitCompareArrows size={17} />
                       </button>
-                      <ComputePicker
-                        execution={execution}
-                        onExecution={switchExecution}
-                        health={computeHealth}
-                        selected={computeId}
-                        onSelect={(id) => {
-                          setSelectedJob(null);
-                          setLabJob(null);
-                          setLabEvidence(null);
-                          setComputeId(id);
-                        }}
-                        open={computeOpen}
-                        onOpenChange={setComputeOpen}
-                        disabled={running || thinking || computeBusy || discoveryMode}
-                      />
                     </div>
                     <button
                       type="submit"
@@ -1381,6 +1422,8 @@ export default function AtlasStudio() {
                     ].map(([task, title]) => (
                       <button
                         key={task}
+                        title={title}
+                        aria-pressed={discoveryConfig.task === task}
                         disabled={thinking || running}
                         onClick={() => {
                           setDiscoveryReady(true);
@@ -1396,7 +1439,7 @@ export default function AtlasStudio() {
                           );
                         }}
                       >
-                        {title}
+                        <span>{title}</span>
                         <ArrowUpRight size={14} />
                       </button>
                     ))}
@@ -1425,8 +1468,8 @@ export default function AtlasStudio() {
                   !thinking && (
                     <div className="da-suggestions">
                       {(execution === 'lab' ? labOptions(stage) : options(stage)).map((o) => (
-                        <button key={o} onClick={() => send(o)}>
-                          {o}
+                        <button key={o} title={o} onClick={() => send(o)}>
+                          <span>{o}</span>
                           <ArrowUpRight size={14} />
                         </button>
                       ))}
@@ -1468,6 +1511,12 @@ export default function AtlasStudio() {
                 aria-label="Atlas workspace"
               >
                 <AtlasView
+                  onSourcePick={(id) => {
+                    setInspectedSource(id);
+                    setSelected(null);
+                  }}
+                  statusHost={atlasStatusHost}
+                  onRotationStop={() => setSettings((s) => ({ ...s, autoRotate: false }))}
                   settings={atlasSettings}
                   onPick={selectRegion}
                   onNeuronPick={pickAtlasNeuron}
@@ -1557,6 +1606,34 @@ export default function AtlasStudio() {
                     <Layers3 size={17} />
                     <span>Structures</span>
                   </button>
+                  <button
+                    className="da-glass-button"
+                    aria-label={
+                      atlasTheme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'
+                    }
+                    title={atlasTheme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+                    onClick={() => change({ theme: atlasTheme === 'light' ? 'dark' : 'light' })}
+                  >
+                    {atlasTheme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
+                  </button>
+                  <a
+                    className="da-glass-button"
+                    href="https://github.com/PouyanJay/drosophila-lab"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="GitHub repository (opens in a new tab)"
+                    title="GitHub repository"
+                  >
+                    <svg
+                      width="17"
+                      height="17"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 .8a11.2 11.2 0 0 0-3.54 21.83c.56.1.77-.24.77-.54v-2.1c-3.13.68-3.79-1.33-3.79-1.33-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.69.08-.69 1.13.08 1.73 1.16 1.73 1.16 1 1.72 2.63 1.22 3.27.94.1-.73.39-1.22.71-1.5-2.5-.28-5.13-1.25-5.13-5.57 0-1.23.44-2.24 1.16-3.03-.12-.28-.5-1.43.11-2.98 0 0 .95-.31 3.08 1.15a10.7 10.7 0 0 1 5.61 0c2.13-1.46 3.08-1.15 3.08-1.15.61 1.55.23 2.7.11 2.98.72.79 1.16 1.8 1.16 3.03 0 4.33-2.64 5.28-5.15 5.56.41.35.76 1.03.76 2.08v3.1c0 .3.2.65.78.54A11.2 11.2 0 0 0 12 .8Z" />
+                    </svg>
+                  </a>
                 </div>
                 <div className="da-camera">
                   <button
@@ -1588,163 +1665,253 @@ export default function AtlasStudio() {
                   <span />
                   <button
                     className="da-icon"
-                    aria-label="Display settings"
-                    onClick={() => setDrawer('display')}
+                    aria-label="Full system"
+                    title={
+                      settings.scope === 'cns'
+                        ? 'Full system · click for brain only'
+                        : 'Show full system'
+                    }
+                    aria-pressed={settings.scope === 'cns'}
+                    onClick={() => {
+                      const full = settings.scope !== 'cns';
+                      change({
+                        scope: full ? 'cns' : 'brain',
+                        destination: full ? 'cns' : 'brain',
+                        view: 'front',
+                        inventory: false,
+                        explode: 0,
+                        isolate: false,
+                        isolateNeuron: false,
+                        selectedBody: null,
+                        selectedRegion: null,
+                        group: -1,
+                        resetKey: (settings.resetKey ?? 0) + 1,
+                      });
+                    }}
                   >
-                    <Settings2 size={19} />
+                    <Expand size={16} />
+                  </button>
+                  <button
+                    className="da-icon"
+                    aria-label="Auto-rotate"
+                    title="Auto-rotate · pauses on interaction"
+                    aria-pressed={!!settings.autoRotate}
+                    disabled={renderer === '2d'}
+                    onClick={() => change({ autoRotate: !settings.autoRotate })}
+                  >
+                    <RotateCw size={16} />
                   </button>
                 </div>
-                {selected && (
-                  <section className="da-inspect">
-                    <button
-                      className="da-icon da-inspect-close"
-                      aria-label="Clear selection"
-                      onClick={() => {
-                        setSelected(null);
-                        change({
-                          selectedRegion: null,
-                          selectedBody: null,
-                          isolateNeuron: false,
-                          selectedPoint: null,
-                          isolate: false,
-                        });
-                      }}
-                    >
-                      <X size={17} />
-                    </button>
-                    <span className="da-kicker">
-                      {selected.kind === 'neuron' ? 'SOURCE NEURON' : 'ANATOMICAL STRUCTURE'}
-                    </span>
-                    <h2>{selectedTitle}</h2>
-                    <p>
-                      {selected.kind === 'neuron'
-                        ? `Body ${selected.data[0]} · ${selected.data[2] || 'Unclassified'}`
-                        : groups[selected.group]}
-                    </p>
-                    {selected.kind === 'region' && (
-                      <div className="da-inspect-actions">
-                        <button
-                          disabled={renderer === '2d'}
-                          onClick={() =>
-                            change({
-                              isolate: !settings.isolate,
-                              inventory: false,
-                              explode: 0,
-                              surfaces: true,
-                              opacity: settings.opacity || 64,
-                            })
-                          }
-                        >
-                          <Focus size={15} />
-                          {settings.isolate ? 'Show context' : 'Isolate'}
+                <div
+                  className={
+                    inspectingCandidate ? 'atlas-inspection-stack' : 'atlas-inspection-unstacked'
+                  }
+                >
+                  {inspectingCandidate && (
+                    <aside className="atlas-candidate-inspection" aria-label="Candidate inspection">
+                      <header>
+                        <strong>{discoveryVariant.candidateId || 'Candidate'}</strong>
+                        <button type="button" onClick={() => setVisualMode('original')}>
+                          Exit inspection
                         </button>
-                        <button
-                          disabled={renderer === '2d'}
-                          onClick={() => {
-                            change({
-                              hidden: [...(settings.hidden || []), selected.id],
-                              isolate: false,
-                              selectedRegion: null,
-                            });
+                      </header>
+                      <p>
+                        <i />{' '}
+                        {variant.loading
+                          ? 'Locating sources…'
+                          : `${new Set(variant.locatedIds).size} of ${new Set(variant.ids).size} source locations`}
+                      </p>
+                      {!discoveryVariant.ancestors && (
+                        <p>No topology recorded for this candidate.</p>
+                      )}
+                      {discoveryVariant.ancestors && (
+                        <p>
+                          {discoveryVariant.ancestors.length} added neurons ·{' '}
+                          {discoveryVariant.edits?.filter(
+                            (edit: { kind: string }) => edit.kind === 'rewired-edge',
+                          ).length || 0}{' '}
+                          rewired edges
+                        </p>
+                      )}
+                      {variant.sources.length > 0 && (
+                        <CandidateSourceDetails
+                          sources={variant.sources}
+                          selected={inspectedSource}
+                          onSelect={(id) => {
+                            setInspectedSource(id);
                             setSelected(null);
                           }}
-                        >
-                          <EyeOff size={15} />
-                          Hide
-                        </button>
-                      </div>
-                    )}
-                    <button className="uw-selection-chat" onClick={discussSelection}>
-                      <MessageCircle size={15} />
-                      Discuss this selection
-                    </button>
-                    {selected.kind === 'neuron' && (
-                      <div className="da-inspect-actions">
-                        <button
-                          disabled={renderer === '2d'}
-                          onClick={() =>
-                            change({ isolateNeuron: !settings.isolateNeuron, focusType: undefined })
-                          }
-                        >
-                          <Focus size={15} />
-                          {settings.isolateNeuron ? 'Show context' : 'Isolate neuron'}
-                        </button>
-                        <button
-                          disabled={renderer === '2d' || !selected.data[1]}
-                          aria-pressed={!!settings.focusType}
-                          onClick={() =>
-                            change({
-                              focusType: settings.focusType ? undefined : selected.data[1],
-                              isolateNeuron: false,
-                            })
-                          }
-                        >
-                          {settings.focusType ? 'Show all types' : 'Same type · sample'}
-                        </button>
-                      </div>
-                    )}
-                    {selected.kind === 'neuron' && (
-                      <a
-                        href={
-                          'https://storage.googleapis.com/flyem-male-cns/v1.0/segmentation/skeletons-malecns/skeletons-swc/' +
-                          selected.data[0] +
-                          '.swc'
-                        }
-                        target="_blank"
-                        rel="noreferrer"
+                          onClear={() => setInspectedSource(null)}
+                          edits={discoveryVariant.edits}
+                        />
+                      )}
+                      <details>
+                        <summary>About these changes</summary>
+                        <small>
+                          {variant.error ||
+                            'Counts include inherited edits. Rings mark source cells of engineered copies, not new biological positions. Rewired edges have no anatomical paths.'}
+                        </small>
+                      </details>
+                    </aside>
+                  )}
+                  {selected && (
+                    <section className="da-inspect">
+                      <button
+                        className="da-icon da-inspect-close"
+                        aria-label="Clear selection"
+                        onClick={() => {
+                          setSelected(null);
+                          change({
+                            selectedRegion: null,
+                            selectedBody: null,
+                            isolateNeuron: false,
+                            selectedPoint: null,
+                            isolate: false,
+                          });
+                        }}
                       >
-                        Open source morphology <ArrowUpRight size={14} />
-                      </a>
-                    )}
-                  </section>
-                )}
+                        <X size={17} />
+                      </button>
+                      <span className="da-kicker">
+                        {selected.kind === 'neuron' ? 'SOURCE NEURON' : 'ANATOMICAL STRUCTURE'}
+                      </span>
+                      <h2>{selectedTitle}</h2>
+                      <p>
+                        {selected.kind === 'neuron'
+                          ? `Body ${selected.data[0]} · ${selected.data[2] || 'Unclassified'}`
+                          : groups[selected.group]}
+                      </p>
+                      {selected.kind === 'region' && (
+                        <div className="da-inspect-actions">
+                          <button
+                            disabled={renderer === '2d'}
+                            onClick={() =>
+                              change({
+                                isolate: !settings.isolate,
+                                inventory: false,
+                                explode: 0,
+                                surfaces: true,
+                                opacity: settings.opacity || 64,
+                              })
+                            }
+                          >
+                            <Focus size={15} />
+                            {settings.isolate ? 'Show context' : 'Isolate'}
+                          </button>
+                          <button
+                            disabled={renderer === '2d'}
+                            onClick={() => {
+                              change({
+                                hidden: [...(settings.hidden || []), selected.id],
+                                isolate: false,
+                                selectedRegion: null,
+                              });
+                              setSelected(null);
+                            }}
+                          >
+                            <EyeOff size={15} />
+                            Hide
+                          </button>
+                        </div>
+                      )}
+                      <button className="uw-selection-chat" onClick={discussSelection}>
+                        <MessageCircle size={15} />
+                        Discuss this selection
+                      </button>
+                      {selected.kind === 'neuron' && (
+                        <div className="da-inspect-actions">
+                          <button
+                            disabled={renderer === '2d'}
+                            onClick={() =>
+                              change({
+                                isolateNeuron: !settings.isolateNeuron,
+                                focusType: undefined,
+                              })
+                            }
+                          >
+                            <Focus size={15} />
+                            {settings.isolateNeuron ? 'Show context' : 'Isolate neuron'}
+                          </button>
+                          <button
+                            disabled={renderer === '2d' || !selected.data[1]}
+                            aria-pressed={!!settings.focusType}
+                            onClick={() =>
+                              change({
+                                focusType: settings.focusType ? undefined : selected.data[1],
+                                isolateNeuron: false,
+                              })
+                            }
+                          >
+                            {settings.focusType ? 'Show all types' : 'Same type · sample'}
+                          </button>
+                        </div>
+                      )}
+                      {selected.kind === 'neuron' && (
+                        <a
+                          href={
+                            'https://storage.googleapis.com/flyem-male-cns/v1.0/segmentation/skeletons-malecns/skeletons-swc/' +
+                            selected.data[0] +
+                            '.swc'
+                          }
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open source morphology <ArrowUpRight size={14} />
+                        </a>
+                      )}
+                    </section>
+                  )}
+                </div>
                 <div className="da-atlas-caption">
-                  <span>{graph ? n(graph.neurons) : '165,122'} neurons</span>
+                  <span>{graph ? n(graph.neurons) : '165,122'} total neurons</span>
+                  <div className="atlas-status-host" ref={setAtlasStatusHost} />
                   <span>{ready || regions.length || 83} structures</span>
                   <button onClick={() => setDialog('about')}>
                     Source & method <ArrowUpRight size={12} />
                   </button>
                 </div>
-                <div className="da-atlas-dock">
-                  <div className="da-assembly">
-                    <button
-                      aria-pressed={!settings.inventory}
-                      onClick={() => change({ inventory: false, explode: 0 })}
-                    >
-                      Assembled
-                    </button>
-                    <Slider
-                      aria-label="Separate structures"
-                      disabled={renderer === '2d'}
-                      value={[settings.explode]}
-                      onValueChange={(v) =>
-                        change({
-                          inventory: true,
-                          explode: v[0],
-                          surfaces: true,
-                          opacity: settings.opacity || 64,
-                        })
-                      }
-                      min={0}
-                      max={100}
-                      step={1}
-                    />
-                    <button
-                      disabled={renderer === '2d'}
-                      aria-pressed={!!settings.inventory}
-                      onClick={() =>
-                        change({
-                          inventory: true,
-                          explode: 100,
-                          surfaces: true,
-                          opacity: settings.opacity || 64,
-                        })
-                      }
-                    >
-                      Inventory
-                    </button>
+                {visualMode === 'original' && !evidenceOpen && (
+                  <div className="da-atlas-dock">
+                    <div className="da-assembly">
+                      <button
+                        aria-pressed={!settings.inventory}
+                        onClick={() => change({ inventory: false, explode: 0 })}
+                      >
+                        Assembled
+                      </button>
+                      <Slider
+                        aria-label="Separate structures"
+                        disabled={renderer === '2d'}
+                        value={[settings.explode]}
+                        onValueChange={(v) =>
+                          change({
+                            inventory: true,
+                            explode: v[0],
+                            surfaces: true,
+                            opacity: settings.opacity || 64,
+                          })
+                        }
+                        min={0}
+                        max={100}
+                        step={1}
+                      />
+                      <button
+                        disabled={renderer === '2d'}
+                        aria-pressed={!!settings.inventory}
+                        onClick={() =>
+                          change({
+                            inventory: true,
+                            explode: 100,
+                            surfaces: true,
+                            opacity: settings.opacity || 64,
+                          })
+                        }
+                      >
+                        Inventory
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </section>
               <div className="uw-evidence-bar">
                 <button
@@ -1791,6 +1958,7 @@ export default function AtlasStudio() {
               >
                 <div className="uw-evidence-heading">
                   <h2>Experiment evidence</h2>
+                  <div className="uw-evidence-actions" ref={setEvidenceActionsHost} />
                   <button
                     className="da-icon"
                     aria-label="Close evidence"
@@ -2301,7 +2469,7 @@ export default function AtlasStudio() {
       <Sheet open={!!drawer} onOpenChange={(v) => !v && setDrawer('')}>
         <SheetContent className="da-sheet" data-atlas-theme={atlasTheme} side="right">
           <SheetTitle>{drawer === 'structures' ? 'Anatomical structures' : 'Display'}</SheetTitle>
-          <SheetDescription>
+          <SheetDescription className={drawer === 'display' ? 'sr-only' : undefined}>
             {drawer === 'structures'
               ? 'Measured MaleCNS surfaces. Select to inspect.'
               : 'Choose the detail you want to explore.'}
@@ -2373,78 +2541,82 @@ export default function AtlasStudio() {
                 change={change}
                 disabled={renderer === '2d'}
               />
-              <label>
-                Whole central nervous system
-                <Switch
-                  checked={settings.scope === 'cns'}
-                  onCheckedChange={(v) => change({ scope: v ? 'cns' : 'brain' })}
-                />
-              </label>
-              {[
-                ['surfaces', 'Neuropil surfaces'],
-                ['fibers', 'Neuron morphology'],
-                ['somas', 'Neuron positions'],
-                ['labels', 'Inventory labels'],
-              ].map(([key, label]) => (
-                <label key={key}>
-                  {label}
+              <details className="atlas-control-section">
+                <summary>Layers & geometry</summary>
+                <label>
+                  Whole central nervous system
                   <Switch
-                    disabled={renderer === '2d'}
-                    checked={!!settings[key as keyof AtlasSettings]}
-                    onCheckedChange={(v) => change({ [key]: v })}
+                    checked={settings.scope === 'cns'}
+                    onCheckedChange={(v) => change({ scope: v ? 'cns' : 'brain' })}
                   />
                 </label>
-              ))}
-              <label>
-                Depth shading
-                <Switch
-                  disabled={renderer === '2d'}
-                  checked={settings.depthShading !== false}
-                  onCheckedChange={(v) => change({ depthShading: v })}
-                />
-              </label>
-              <label>
-                Branch thickness <span>{(settings.branchScale ?? 1).toFixed(1)}×</span>
-              </label>
-              <Slider
-                aria-label="Branch thickness"
-                disabled={renderer === '2d'}
-                value={[settings.branchScale ?? 1]}
-                min={0.5}
-                max={2}
-                step={0.1}
-                onValueChange={(v) => change({ branchScale: v[0] })}
-              />
-              <p>
-                Thickness scales source radius estimates for display. It does not change the brain.
-              </p>
-              <label>
-                Surface opacity <span>{settings.opacity}%</span>
-              </label>
-              <Slider
-                aria-label="Surface opacity"
-                disabled={renderer === '2d'}
-                value={[settings.opacity]}
-                min={0}
-                max={100}
-                onValueChange={(v) => change({ opacity: v[0] })}
-              />
-              <label>
-                Cutaway <span>{settings.slice}%</span>
-              </label>
-              <Slider
-                aria-label="Cutaway"
-                disabled={renderer === '2d'}
-                value={[settings.slice || 0]}
-                min={0}
-                max={100}
-                onValueChange={(v) => change({ slice: v[0] })}
-              />
-              <p>
-                {renderer === '2d'
-                  ? 'This device is showing a 2D projection of measured source positions. Surface controls require WebGL.'
-                  : 'Drag to rotate, scroll or pinch to zoom. The inventory separates region surfaces; it does not move biological coordinates.'}
-              </p>
+                {[
+                  ['surfaces', 'Neuropil surfaces'],
+                  ['fibers', 'Neuron morphology'],
+                  ['somas', 'Neuron positions'],
+                  ['labels', 'Inventory labels'],
+                ].map(([key, label]) => (
+                  <label key={key}>
+                    {label}
+                    <Switch
+                      disabled={renderer === '2d'}
+                      checked={!!settings[key as keyof AtlasSettings]}
+                      onCheckedChange={(v) => change({ [key]: v })}
+                    />
+                  </label>
+                ))}
+                <label>
+                  Depth shading
+                  <Switch
+                    disabled={renderer === '2d'}
+                    checked={settings.depthShading !== false}
+                    onCheckedChange={(v) => change({ depthShading: v })}
+                  />
+                </label>
+                <div className="atlas-slider-control">
+                  <label>
+                    Branch thickness <span>{(settings.branchScale ?? 1).toFixed(1)}×</span>
+                  </label>
+                  <Slider
+                    aria-label="Branch thickness"
+                    disabled={renderer === '2d'}
+                    value={[settings.branchScale ?? 1]}
+                    min={0.5}
+                    max={2}
+                    step={0.1}
+                    onValueChange={(v) => change({ branchScale: v[0] })}
+                  />
+                </div>
+                <div className="atlas-slider-control">
+                  <label>
+                    Surface opacity <span>{settings.opacity}%</span>
+                  </label>
+                  <Slider
+                    aria-label="Surface opacity"
+                    disabled={renderer === '2d'}
+                    value={[settings.opacity]}
+                    min={0}
+                    max={100}
+                    onValueChange={(v) => change({ opacity: v[0] })}
+                  />
+                </div>
+                <div className="atlas-slider-control">
+                  <label>
+                    Cutaway <span>{settings.slice ?? 0}%</span>
+                  </label>
+                  <Slider
+                    aria-label="Cutaway"
+                    disabled={renderer === '2d'}
+                    value={[settings.slice ?? 0]}
+                    min={0}
+                    max={100}
+                    onValueChange={(v) => change({ slice: v[0] })}
+                  />
+                </div>
+                {renderer === '2d' && (
+                  <p className="atlas-control-hint">Surface controls need WebGL.</p>
+                )}
+              </details>
             </div>
           )}
         </SheetContent>

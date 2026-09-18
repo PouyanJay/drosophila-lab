@@ -82,7 +82,7 @@ try {
   await page.getByRole('button', { name: 'Architecture discovery mode', exact: true }).click();
   await contrast(page.locator('.discovery-panel'));
   await contrast(page.locator('.discovery-panel p'));
-  await contrast(page.locator('.discovery-panel select'));
+  await contrast(page.locator('.discovery-task h3'));
   await contrast(page.locator('.discovery-panel .da-primary'));
   await contrast(page.locator('.da-compute-trigger'));
   await screenshot('.validation/workspace-light-discovery.png');
@@ -95,22 +95,14 @@ try {
   await contrast(page.locator('.cd-chip'));
   await screenshot('.validation/workspace-light-spending.png');
   await close();
-  await page.getByRole('button', { name: 'Display settings' }).click();
-  const toggle = page.getByRole('switch', { name: 'Light mode', exact: true });
-  assert.equal(await toggle.getAttribute('data-state'), 'checked');
-  assert.equal(
-    await toggle.evaluate((e) => getComputedStyle(e).backgroundColor),
-    'rgb(36, 95, 165)',
-  );
+  await page.getByRole('button', { name: 'Explore atlas' }).click();
   await screenshot('.validation/workspace-light-settings.png');
-  await toggle.click();
-  assert.equal(await page.locator('html').getAttribute('data-workspace-theme'), 'dark');
   await close();
+  await page.getByRole('button', { name: 'Switch to dark mode' }).click();
+  assert.equal(await page.locator('html').getAttribute('data-workspace-theme'), 'dark');
   await page.reload();
   await page.waitForFunction(() => document.documentElement.dataset.workspaceTheme === 'dark');
-  await page.getByRole('button', { name: 'Display settings' }).click();
-  await page.getByRole('switch', { name: 'Light mode', exact: true }).click();
-  await close();
+  await page.getByRole('button', { name: 'Switch to light mode' }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: 'Conversation', exact: true }).click();
   await contrast(page.locator('.da-model-trigger'));

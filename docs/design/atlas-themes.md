@@ -1,10 +1,10 @@
 # Atlas themes and selected-cell visibility
 
-Open **Explore atlas → Light mode** (also available in Display settings). The preference persists locally and survives Reset view. This setting themes the entire workspace, including the sidebar, conversation, discovery cards, evidence, portaled menus and dialogs, atlas overlays, and exported image. The preference applies to both atlas and workspace chrome.
+Use the **sun/moon button in the atlas toolbar** to switch themes. The preference persists locally and survives Reset view. This setting themes the entire workspace, including the sidebar, conversation, discovery cards, evidence, portaled menus and dialogs, atlas overlays, and exported image. The preference applies to both atlas and workspace chrome.
 
 ## Rendering changes
 
-- Dark mode uses a brighter version of each categorical hue and higher branch fill lighting, with less aggressive depth darkening.
+- Dark mode uses richer midtone categorical hues, restrained fill/rim lighting and stronger depth contrast to separate overlapping strands without pastel glare.
 - Light mode uses a white canvas, saturated source-cell colors, neutral gray translucent compartments and light controls. It follows the supplied EveryNeuron screenshots' visual hierarchy.
 - Compartment opacity is strongest at grazing angles and lighter across faces. Quiet context bypasses colored scene lighting so neutral anatomy does not become a blue cloud.
 - Selecting any neuron now explicitly enters isolation, leaving quiet anatomical compartments around it. Dense dimmed neurons no longer hide the selected cell by default. **Show context** restores them; the context brightness slider is disabled while isolated.

@@ -57,6 +57,7 @@ export default function ComputePicker({
           className="da-compute-trigger"
           disabled={disabled || busy}
           aria-label="Choose local compute"
+          title="Choose local compute"
         >
           <Cpu size={18} />
           <span>{execution === 'browser' ? 'This browser' : 'Local trainer'}</span>

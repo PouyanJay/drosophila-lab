@@ -27,7 +27,9 @@ try {
     await page.getByRole('button', { name: 'Explore atlas' }).click();
     await page.getByRole('button', { name: label, exact: true }).click();
   }
-  await select('MN6 · 519667');
+  await page.getByRole('button', { name: 'Explore atlas' }).click();
+  await page.locator('summary').filter({ hasText: 'Surface close-ups' }).click();
+  await page.getByRole('button', { name: 'MN6 · 519667', exact: true }).click();
   await page.waitForFunction(() =>
     document
       .querySelector('.atlas-morphology-status')

@@ -6,7 +6,7 @@ async function handle(request: Request) {
   const path = new URL(request.url).pathname.replace('/api/discovery/', '');
   const valid =
     request.method === 'GET'
-      ? /^(tasks|campaigns|campaigns\/[a-f0-9-]{36}(\/artifacts\/(result.json|variant-bundle.zip))?)$/
+      ? /^(tasks|campaigns|campaigns\/[a-f0-9-]{36}(\/artifacts\/(result.json|variant-bundle.zip)|\/candidates\/(original|candidate-(0|[1-9][0-9]?))\/curves)?)$/
       : /^(campaigns|campaigns\/[a-f0-9-]{36}\/(pause|resume|cancel))$/;
   if (!valid.test(path))
     return Response.json({ error: 'Unknown discovery operation' }, { status: 404 });

@@ -26,15 +26,20 @@ const palette = [
   '#df75a5',
 ];
 const darkColors: Record<string, string> = {
-  '#4779ef': '#79a8ff',
-  '#36b8c6': '#53d9e5',
-  '#9762e0': '#be8aff',
-  '#c963cb': '#f18be8',
-  '#ff974a': '#ffb665',
-  '#c6d764': '#d9eb7a',
-  '#65c49b': '#83e7ba',
-  '#df75a5': '#ff9ccc',
-  '#93a4b8': '#bdcddd',
+  '#4779ef': '#538ae8',
+  '#36b8c6': '#32b3bf',
+  '#9762e0': '#9864d5',
+  '#c963cb': '#c561bb',
+  '#ff974a': '#e79845',
+  '#c6d764': '#aebd52',
+  '#65c49b': '#54b58d',
+  '#df75a5': '#d7759f',
+  '#93a4b8': '#8597ad',
+  '#c4dd57': '#acc24c',
+  '#edba85': '#d4a06b',
+  '#ec91a7': '#d87f94',
+  '#ffba66': '#e5a450',
+  '#9dc6e0': '#80abc7',
 };
 export function themeColor(color: string, theme: 'dark' | 'light') {
   return theme === 'dark' ? (darkColors[color] ?? color) : color;

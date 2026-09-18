@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import * as THREE from 'three';
 import { MorphologyLayer, type MorphologyProgress } from './atlas-morphology-layer';
 import { loadMembrane, membraneGallery } from './atlas-membrane';
@@ -42,6 +43,9 @@ export type AtlasSettings = {
   multi?: boolean;
   slice?: number;
   ancestors?: number[][];
+  inspection?: boolean;
+  sourceMarkers?: import('@/features/discovery/candidate-source-details').SourceMarker[];
+  selectedSource?: string | null;
   interactive?: boolean;
   comparison?: boolean;
   selectedPoint?: number[] | null;
@@ -67,17 +71,25 @@ export default function AtlasView({
   onReady,
   onRenderer,
   onNeuronPick,
+  statusHost,
+  onRotationStop,
+  onSourcePick,
 }: {
   settings: AtlasSettings;
+  statusHost?: HTMLElement | null;
+  onRotationStop?: () => void;
+  onSourcePick?: (bodyId: string | null) => void;
   onPick: (r: any) => void;
   onNeuronPick?: (bodyId: string) => void;
   onReady: (n: number) => void;
   onRenderer?: (mode: 'webgl' | '2d') => void;
 }) {
+  const sourceButtons = useRef(new Map<string, HTMLButtonElement>());
   const container = useRef<HTMLDivElement>(null),
     state = useRef(settings),
     pick = useRef(onPick),
     neuronPick = useRef(onNeuronPick),
+    rotationStop = useRef(onRotationStop),
     [morphology, setMorphology] = useState<MorphologyProgress | null>(null),
     [membraneStatus, setMembraneStatus] = useState<{ bodyId: string; text: string } | null>(null),
     [hovered, setHovered] = useState<string | null>(null),
@@ -94,8 +106,9 @@ export default function AtlasView({
     state.current = settings;
     pick.current = onPick;
     neuronPick.current = onNeuronPick;
+    rotationStop.current = onRotationStop;
     ready.current = onReady;
-  }, [settings, onPick, onNeuronPick, onReady]);
+  }, [settings, onPick, onNeuronPick, onReady, onRotationStop]);
   useEffect(() => {
     const el = container.current;
     if (!el) return;
@@ -130,11 +143,13 @@ export default function AtlasView({
     controls.target.set(385, -210, 185);
     controls.enableDamping = true;
     controls.autoRotateSpeed = 0.4;
-    let orbitPaused = false;
-    let lastOrbit = false;
-    controls.addEventListener('start', () => {
-      orbitPaused = true;
-    });
+    const stopRotation = () => {
+      controls.autoRotate = false;
+      if (!state.current.autoRotate) return;
+      state.current = { ...state.current, autoRotate: false };
+      rotationStop.current?.();
+    };
+    controls.addEventListener('start', stopRotation);
     controls.dampingFactor = 0.08;
     controls.minDistance = 100;
     controls.maxDistance = 12000;
@@ -230,11 +245,27 @@ export default function AtlasView({
     const pointer = new THREE.Vector2();
     let down = [0, 0];
     let highlight: THREE.LineSegments | null = null;
+    const markerCanvas = document.createElement('canvas');
+    markerCanvas.width = markerCanvas.height = 64;
+    const markerContext = markerCanvas.getContext('2d')!;
+    markerContext.strokeStyle = '#ffffff';
+    markerContext.lineWidth = 5;
+    markerContext.beginPath();
+    markerContext.arc(32, 32, 23, 0, Math.PI * 2);
+    markerContext.stroke();
+    markerContext.fillStyle = '#ffffff';
+    markerContext.beginPath();
+    markerContext.arc(32, 32, 5, 0, Math.PI * 2);
+    markerContext.fill();
+    const markerTexture = new THREE.CanvasTexture(markerCanvas);
     const ancestry = new THREE.Points(
       new THREE.BufferGeometry(),
       new THREE.PointsMaterial({
         color: 0x9ac6ff,
-        size: 7,
+        size: 25,
+        map: markerTexture,
+        alphaTest: 0.1,
+        depthWrite: false,
         sizeAttenuation: false,
         transparent: true,
         opacity: 0.95,
@@ -642,18 +673,16 @@ export default function AtlasView({
         membrane.material.color.set(
           cellColor(membraneCell, s.colorMode ?? 'cell', s.theme ?? 'dark'),
         );
+      ancestry.material.color.set(lightTheme ? '#a65a09' : '#f4bf69');
       morphologyLayer.update(
         s,
         camera.position.distanceTo(controls.target),
         membrane.visible ? membraneBody : '',
       );
       controls.enabled = s.interactive !== false;
-      if (!!s.autoRotate !== lastOrbit) {
-        orbitPaused = false;
-        lastOrbit = !!s.autoRotate;
-      }
-      controls.autoRotate =
-        !!s.autoRotate && !orbitPaused && !reducedMotion.matches && !focusTarget;
+      const rotationBlocked = reducedMotion.matches || !!focusTarget;
+      controls.autoRotate = !!s.autoRotate && !rotationBlocked;
+      if (s.autoRotate && rotationBlocked) stopRotation();
 
       renderer.domElement.style.touchAction = controls.enabled ? 'none' : 'pan-y';
       clip.constant = s.inventory ? 20000 : s.scope === 'brain' ? 450 : 2000;
@@ -789,14 +818,37 @@ export default function AtlasView({
           renderer.setScissor(0, 0, half, h);
           renderer.setViewport(0, 0, half, h);
           renderView(0, 0, half, h, s.depthShading !== false);
-          ancestry.visible = !s.inventory && !s.isolateNeuron;
+          ancestry.visible = !s.inventory && !s.isolateNeuron && !s.sourceMarkers?.length;
           renderer.setScissor(half, 0, w - half, h);
           renderer.setViewport(half, 0, w - half, h);
           renderView(half, 0, w - half, h, s.depthShading !== false);
           renderer.setScissorTest(false);
         } else {
-          ancestry.visible = !s.inventory && !s.isolateNeuron;
+          ancestry.visible = !s.inventory && !s.isolateNeuron && !s.sourceMarkers?.length;
           renderView(0, 0, w, h, s.depthShading !== false);
+        }
+        for (const source of s.sourceMarkers ?? []) {
+          const button = sourceButtons.current.get(source.bodyId);
+          if (!button) continue;
+          const projected = new THREE.Vector3(...source.position)
+            .applyMatrix4(root.matrixWorld)
+            .project(camera);
+          const width = s.comparison ? w / 2 : w;
+          const x = ((projected.x + 1) * width) / 2 + (s.comparison ? width : 0);
+          const y = ((1 - projected.y) * h) / 2;
+          button.style.left = `${x}px`;
+          button.style.top = `${y}px`;
+          button.style.visibility =
+            Math.abs(projected.x) < 1 &&
+            Math.abs(projected.y) < 1 &&
+            projected.z > -1 &&
+            projected.z < 1 &&
+            x > 0 &&
+            x < w &&
+            y > 0 &&
+            y < h
+              ? 'visible'
+              : 'hidden';
         }
         if (s.multi && !s.comparison) {
           const sw = Math.round(w * 0.26),
@@ -1001,23 +1053,52 @@ export default function AtlasView({
           : 'Three-dimensional anatomical MaleCNS atlas with original neuropil surfaces and shaded source neuron morphology'
       }
     >
-      {!fallback && morphology && (
-        <div className="atlas-morphology-status">
-          <span className="atlas-morphology-dot" />
-          <span aria-live={hovered ? 'off' : 'polite'}>
-            {hovered ||
-              `${morphology.loaded.toLocaleString()}${morphology.done ? '' : ` / ${morphology.total.toLocaleString()}`} source neurons`}
-          </span>
-          {membraneStatus?.bodyId === settings.selectedBody && <small>{membraneStatus.text}</small>}
-          <small>
-            {morphology.failed
-              ? `Partial anatomy · ${morphology.failed} unavailable`
-              : morphology.done
-                ? `Representative anatomy · ${settings.colorMode ?? 'class'} colors${settings.hiddenClasses?.length ? ' · filtered' : ''}`
-                : 'Loading detailed anatomy…'}
-          </small>
-        </div>
-      )}
+      {!fallback &&
+        settings.sourceMarkers?.map((source, index) => (
+          <button
+            key={source.bodyId}
+            type="button"
+            className="atlas-source-marker"
+            ref={(element) => {
+              if (element) sourceButtons.current.set(source.bodyId, element);
+              else sourceButtons.current.delete(source.bodyId);
+            }}
+            aria-label={`Source ${index + 1}, body ${source.bodyId}, ${source.copies} ${source.copies === 1 ? 'copy' : 'copies'}`}
+            title={`Body ${source.bodyId} · ${source.copies} ${source.copies === 1 ? 'copy' : 'copies'}`}
+            aria-pressed={settings.selectedSource === source.bodyId}
+            onClick={() => onSourcePick?.(source.bodyId)}
+          >
+            {index + 1}
+          </button>
+        ))}
+      {!fallback &&
+        morphology &&
+        statusHost &&
+        createPortal(
+          <div className="atlas-morphology-status">
+            <span
+              aria-live="polite"
+              title="Loaded representative sample; filters and view can show fewer neurons"
+            >
+              {`${morphology.loaded.toLocaleString()}${morphology.done ? '' : ` / ${morphology.total.toLocaleString()}`} sampled`}
+            </span>
+            {hovered && <small>{hovered}</small>}
+            {membraneStatus?.bodyId === settings.selectedBody && (
+              <small>{membraneStatus.text}</small>
+            )}
+            <small
+              className={morphology.done && !morphology.failed ? 'sr-only' : undefined}
+              aria-live="polite"
+            >
+              {morphology.failed
+                ? `Partial anatomy · ${morphology.failed} unavailable`
+                : morphology.done
+                  ? `Representative anatomy · ${settings.colorMode ?? 'class'} colors${settings.hiddenClasses?.length ? ' · filtered' : ''}`
+                  : 'Loading detailed anatomy…'}
+            </small>
+          </div>,
+          statusHost,
+        )}
       {fallback && <AtlasFallback settings={settings} />}{' '}
       {!fallback && !error && loaded < total && (
         <div className="atlas-loading">

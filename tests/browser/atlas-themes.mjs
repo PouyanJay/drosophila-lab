@@ -23,11 +23,9 @@ try {
     { timeout: 90000 },
   );
   await page.addStyleTag({ content: 'nextjs-portal{visibility:hidden}' });
-  async function select(label) {
-    await page.getByRole('button', { name: 'Explore atlas' }).click();
-    await page.getByRole('button', { name: label, exact: true }).click();
-  }
-  await select('MN6 · 519667');
+  await page.getByRole('button', { name: 'Explore atlas' }).click();
+  await page.locator('summary').filter({ hasText: 'Surface close-ups' }).click();
+  await page.getByRole('button', { name: 'MN6 · 519667', exact: true }).click();
   await page.waitForFunction(() =>
     document
       .querySelector('.atlas-morphology-status')
@@ -46,14 +44,15 @@ try {
   );
   await page.getByRole('button', { name: 'Isolate neuron', exact: true }).click();
   await page.getByRole('button', { name: 'Explore atlas' }).click();
+  await page.locator('summary').filter({ hasText: 'Depth & motion' }).click();
   assert.equal(
     await page
       .getByRole('slider', { name: 'Selected neuron context' })
       .evaluate((element) => element.closest('[data-slot=slider]').hasAttribute('data-disabled')),
     true,
   );
-  await page.getByRole('switch', { name: 'Light mode', exact: true }).click();
   await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Switch to light mode' }).click();
   await page.waitForTimeout(500);
   await page.screenshot({ path: '.validation/atlas-theme-light.png' });
   assert.equal(await page.locator('.uw-atlas').getAttribute('data-atlas-theme'), 'light');
@@ -72,7 +71,7 @@ try {
   const atlasTab = page.getByRole('button', { name: 'Atlas', exact: true });
   if (await atlasTab.count()) await atlasTab.click();
   await page.getByRole('button', { name: 'Explore atlas' }).click();
-  await page.getByRole('switch', { name: 'Light mode', exact: true }).waitFor();
+  await page.getByRole('switch', { name: 'Anatomical context', exact: true }).waitFor();
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await page.waitForTimeout(400);
   const drawer = await page.getByRole('dialog').boundingBox();

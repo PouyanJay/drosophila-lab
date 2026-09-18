@@ -107,7 +107,7 @@
   },
   "src/features/discovery/discovery-panel.tsx": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 11
+      "count": 8
     },
     "react-hooks/refs": {
       "count": 1

@@ -113,8 +113,13 @@ void main() {
   bool selected = abs(identity - selectedId) < 0.5;
   bool hovered = abs(identity - hoveredId) < 0.5;
   vec3 albedo = tint * (selected ? 1.12 : hovered ? 1.18 : 1.0);
-  vec3 color = albedo * ((lightTheme ? 0.22 : 0.40) + 0.85 * key + 0.18 * fill) + albedo * 0.12 * edge;
-  if (depthCue) color *= mix(lightTheme ? 0.65 : 0.8, 1.0, smoothstep(-220.0, 220.0, focusDistance + viewPosition.z));
+  // Keep the approved light response; dark anatomy needs matte directional
+  // contrast rather than bright fill and rim light across every strand.
+  float lighting = lightTheme
+    ? 0.22 + 0.85 * key + 0.18 * fill
+    : 0.24 + 0.72 * key + 0.13 * fill;
+  vec3 color = albedo * lighting + albedo * (lightTheme ? 0.12 : 0.035) * edge;
+  if (depthCue) color *= mix(lightTheme ? 0.65 : 0.48, 1.0, smoothstep(-220.0, 220.0, focusDistance + viewPosition.z));
   if (selectedId > 0.0 && !selected) {
     float gray = dot(color, vec3(0.2126, 0.7152, 0.0722));
     color = mix(vec3(gray * 0.72, gray * 0.82, gray), color, 0.12) * contextBrightness;

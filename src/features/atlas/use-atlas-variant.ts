@@ -51,5 +51,19 @@ export function useAtlasVariant(
   const positions = ids.flatMap((id) =>
     map?.positions[String(id)] ? [map.positions[String(id)]] : [],
   );
-  return { positions, ids, available, loading: available && !map && !error, error };
+  const locatedIds = ids.filter((id) => map?.positions[String(id)]);
+  const sources = [...new Set(locatedIds)].map((bodyId) => ({
+    bodyId,
+    position: map!.positions[String(bodyId)],
+    copies: ids.filter((id) => id === bodyId).length,
+  }));
+  return {
+    positions,
+    ids,
+    locatedIds,
+    sources,
+    available,
+    loading: available && !map && !error,
+    error,
+  };
 }
